@@ -1,44 +1,129 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import Layout from './components/Layout.jsx'
-import Home from './pages/Home.jsx'
-import About from './pages/About.jsx'
-import Services from './pages/Services.jsx'
-import Causes from './pages/Causes.jsx'
-import Events from './pages/Events.jsx'
-import Gallery from './pages/Gallery.jsx'
-import Blog from './pages/Blog.jsx'
-import Donation from './pages/Donation.jsx'
-import Volunteer from './pages/Volunteer.jsx'
-import Contact from './pages/Contact.jsx'
-import NotFound from './pages/NotFound.jsx'
-import Auth from './pages/Auth.jsx'
-import Dashboard from './pages/Dashboard.jsx'
-import './App.css'
+// import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+// import Layout from './components/Layout.jsx'
+// import Home from './pages/Home.jsx'
+// import About from './pages/About.jsx'
+// import Services from './pages/Services.jsx'
+// import Causes from './pages/Causes.jsx'
+// import Events from './pages/Events.jsx'
+// import Gallery from './pages/Gallery.jsx'
+// import Blog from './pages/Blog.jsx'
+// import Donation from './pages/Donation.jsx'
+// import Volunteer from './pages/Volunteer.jsx'
+// import Contact from './pages/Contact.jsx'
+// import NotFound from './pages/NotFound.jsx'
+// import Auth from './pages/Auth.jsx'
+// import Dashboard from './pages/Dashboard.jsx'
+// import './App.css'
+// import AdminLayout from './Layouts/AdminLayout.jsx'
 
-function App() {
+// function App() {
+//   return (
+//     <Router>
+//       <Routes>
+//         <Route path="/admin" element={<AdminLayout />} />
+//         {/* Dashboard: standalone — no header/footer wrapper */}
+//         {/* <Route path="/dashboard/:role" element={<Dashboard />} /> */}
+
+//         {/* Public site: with Layout (nav + footer) */}
+//         {/* <Route path="/" element={<Layout />}>
+//           <Route index element={<Home />} />
+//           <Route path="about" element={<About />} />
+//           <Route path="services" element={<Services />} />
+//           <Route path="causes" element={<Causes />} />
+//           <Route path="events" element={<Events />} />
+//           <Route path="gallery" element={<Gallery />} />
+//           <Route path="blog" element={<Blog />} />
+//           <Route path="donation" element={<Donation />} />
+//           <Route path="volunteer" element={<Volunteer />} />
+//           <Route path="contact" element={<Contact />} />
+//           <Route path="auth" element={<Auth />} />
+//           <Route path="*" element={<NotFound />} />
+//         </Route> */}
+//       </Routes>
+//     </Router>
+//   )
+// }
+
+// export default App
+
+import React from 'react'
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom"
+import MainLayout from './Layouts/MainLayout'
+import DashboardLayout from './Layouts/DashboardLayout'
+
+// Pages
+import Home from './pages/Home'
+import Auth from './pages/Auth'
+import About from "./pages/About"
+
+// Admin Pages
+import AdminDashboard from './panels/admin/pages/Dashboard'
+import Managemc from './panels/admin/pages/Managemc'
+import Manageareas from './panels/admin/pages/Manageareas'
+import Managecitizens from './panels/admin/pages/Managecitizen'
+import Managecomplaints from './panels/admin/pages/Managecomplaints'
+import Managetasks from './panels/admin/pages/Managetasks'
+
+// Citizen Pages
+import CitizenDashboard from './panels/citizen/pages/Dashboard'
+import Register from './panels/citizen/pages/Register'
+import CitizenRoutes from './panels/citizen/citizenRoutes'
+
+// MC Pages
+import McDashboard from './panels/mc/pages/Dashboard'
+import ManageWorkers from './panels/mc/pages/Manageworker'
+import McManageComplaints from './panels/mc/pages/Managecomplaints'
+import McManageTasks from './panels/mc/pages/Managetasks'
+import McReports from './panels/mc/pages/WeeklyReport'
+
+// Shared Components
+import SettingsModule from './components/dashboard/SettingsModule'
+
+
+const App = () => {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        {/* Dashboard: standalone — no header/footer wrapper */}
-        <Route path="/dashboard/:role" element={<Dashboard />} />
-
-        {/* Public site: with Layout (nav + footer) */}
-        <Route path="/" element={<Layout />}>
+        {/* Public Routes */}
+        <Route path='/auth' element={<Auth />} />
+        <Route path='/' element={<MainLayout />}>
           <Route index element={<Home />} />
-          <Route path="about" element={<About />} />
-          <Route path="services" element={<Services />} />
-          <Route path="causes" element={<Causes />} />
-          <Route path="events" element={<Events />} />
-          <Route path="gallery" element={<Gallery />} />
-          <Route path="blog" element={<Blog />} />
-          <Route path="donation" element={<Donation />} />
-          <Route path="volunteer" element={<Volunteer />} />
-          <Route path="contact" element={<Contact />} />
-          <Route path="auth" element={<Auth />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path='about' element={<About />} />
         </Route>
+
+        {/* Admin Routes */}
+        <Route path='/admin' element={<DashboardLayout role="admin" />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path='manage-mc' element={<Managemc />} />
+          <Route path='manage-areas' element={<Manageareas />} />
+          <Route path='manage-citizens' element={<Managecitizens />} />
+          <Route path='manage-complaints' element={<Managecomplaints />} />
+          <Route path='manage-tasks' element={<Managetasks />} />
+          <Route path='settings' element={<SettingsModule />} />
+        </Route>
+
+        {/* Citizen Routes */}
+        <Route path='/citizen' element={<DashboardLayout role="citizen" />}>
+          <Route index element={<CitizenDashboard />} />
+          <Route path='register' element={<Register />} />
+          <Route path='*' element={<CitizenRoutes />} />
+        </Route>
+
+        {/* MC Routes */}
+        <Route path='/mc' element={<DashboardLayout role="mc" />}>
+          <Route index element={<McDashboard />} />
+          <Route path='manage-workers' element={<ManageWorkers />} />
+          <Route path='complaints' element={<McManageComplaints />} />
+          <Route path='tasks' element={<McManageTasks />} />
+          <Route path='reports' element={<McReports />} />
+          <Route path='settings' element={<SettingsModule />} />
+        </Route>
+
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   )
 }
 

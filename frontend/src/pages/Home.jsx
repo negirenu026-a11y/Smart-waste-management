@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { handleImageError } from '../utils/imageFallback.js'
+import CityDataDisplay from '../components/CityDataDisplay';
 
 function Home() {
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -538,6 +539,17 @@ function Home() {
           </div>
         </div>
       </section>
+      {/* City Data Section */}
+      <section className="section bg-light py-5">
+        <div className="container">
+          <div className="section-heading text-center mb-5">
+            <span className="eyebrow text-brand">Regional Data</span>
+            <h2 className="fw-bold">City Waste Management Info</h2>
+          </div>
+          <CityDataDisplay />
+        </div>
+      </section>
+
 {/* Stats Section */}
       
       <section className="section bg-dark text-white py-5" ref={statsRef}>

@@ -35,50 +35,57 @@ export const defaultSectionByPanel = {
     citizen: "report"
 };
 
+export const cities = ["Shimla", "Dharamshala", "Mandi", "Solan", "Palampur"];
+export const zones = ["North", "South", "East", "West", "Central"];
+
 export const panelConfig = {
     admin: {
         title: "Administrator",
         subtitle: "Full system oversight and analytics",
         metrics: [
-            { label: "Registered MCs", value: "24" },
-            { label: "Active Citizens", value: "1,540" },
-            { label: "High Priority Alerts", value: "8" }
+            { label: "Registered MCs", value: "0" },
+            { label: "Active Citizens", value: "0" },
+            { label: "Open Complaints", value: "0" }
         ],
         sections: [
-            { id: "overview", label: "Overview", icon: "fa-chart-pie" },
-            { id: "mcs", label: "Manage MCs", icon: "fa-building" },
-            { id: "areas", label: "Manage Areas", icon: "fa-map-marked-alt" },
-            { id: "citizens", label: "Manage Citizens", icon: "fa-users" },
-            { id: "complaints", label: "Manage Complaints", icon: "fa-file-invoice" },
-            { id: "workers", label: "Manage Workers", icon: "fa-hard-hat" }
+            { id: "overview", label: "Overview", icon: "fa-chart-pie", path: "" },
+            { id: "manage-mc", label: "Manage MCs", icon: "fa-building", path: "manage-mc" },
+            { id: "manage-areas", label: "Manage Areas", icon: "fa-map-marked-alt", path: "manage-areas" },
+            { id: "manage-citizens", label: "Manage Citizens", icon: "fa-users", path: "manage-citizens" },
+            { id: "manage-complaints", label: "Manage Complaints", icon: "fa-file-invoice", path: "manage-complaints" },
+            { id: "manage-tasks", label: "Manage Tasks", icon: "fa-tasks", path: "manage-tasks" }
         ]
     },
     mc: {
         title: "Municipal Control",
         subtitle: "Operations and workforce management",
         metrics: [
-            { label: "Workers On Duty", value: "85" },
-            { label: "Tasks Due Today", value: "12" },
-            { label: "Open Complaints", value: "34" }
+            { label: "Workers On Duty", value: "0" },
+            { label: "Tasks Due Today", value: "0" },
+            { label: "Open Complaints", value: "0" }
         ],
         sections: [
-            { id: "workforce", label: "Manage Workers", icon: "fa-hard-hat" },
-            { id: "tasks", label: "Task Management", icon: "fa-tasks" },
-            { id: "pipeline", label: "Manage Complaints", icon: "fa-stream" }
+            { id: "overview", label: "Overview", icon: "fa-chart-line", path: "" },
+            { id: "manage-workers", label: "Manage Workers", icon: "fa-hard-hat", path: "manage-workers" },
+            { id: "complaints", label: "Manage Complaints", icon: "fa-stream", path: "complaints" },
+            { id: "tasks", label: "Task Management", icon: "fa-tasks", path: "tasks" },
+            { id: "reports", label: "Weekly Reports", icon: "fa-chart-bar", path: "reports" }
         ]
     },
     citizen: {
         title: "Citizen Portal",
         subtitle: "Report issues and track improvements",
         metrics: [
-            { label: "Complaints Submitted", value: "5" },
-            { label: "Resolved Reports", value: "3" },
-            { label: "Impact Points", value: "120" }
+            { label: "Complaints Submitted", value: "0" },
+            { label: "Resolved Reports", value: "0" },
+            { label: "Impact Points", value: "0" }
         ],
         sections: [
-            { id: "report", label: "New Report", icon: "fa-plus-circle" },
-            { id: "history", label: "My History", icon: "fa-history" },
-            { id: "profile", label: "My Profile", icon: "fa-user-circle" }
+            { id: "overview", label: "Dashboard", icon: "fa-tachometer-alt", path: "" },
+            { id: "register", label: "Register Itself", icon: "fa-user-plus", path: "register" },
+            { id: "complaint", label: "Make Complaint", icon: "fa-plus-circle", path: "complaint" },
+            { id: "history", label: "History", icon: "fa-history", path: "history" }
         ]
     }
 };
+

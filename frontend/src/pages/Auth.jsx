@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import './Auth.css';
-
-const API_BASE_URL = "http://localhost:4000/api";
 
 const countryOptions = [
     "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia",
@@ -72,13 +69,18 @@ const indiaStateCityMap = {
     "Puducherry": ["Karaikal", "Mahe", "Puducherry", "Yanam", "Ozhukarai"]
 };
 
+// Hardcoded Frontend-only credentials
+const MOCK_USERS = [
+    { email: 'admin@gmail.com', password: 'admin123', role: 'admin', name: 'System Admin' },
+    { email: 'mc@gmail.com', password: 'mc123', role: 'mc', name: 'Municipal Corp' },
+    { email: 'citizen@gmail.com', password: 'citizen123', role: 'citizen', name: 'Citizen User' }
+];
 
 export default function Auth() {
     const navigate = useNavigate();
     const [authMode, setAuthMode] = useState("register");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const [showAdminModal, setShowAdminModal] = useState(false);
 
     const [formData, setFormData] = useState({
         role: "citizen",
@@ -92,7 +94,6 @@ export default function Auth() {
     });
 
     const [loginData, setLoginData] = useState({ username: "", password: "" });
-    const [adminData, setAdminData] = useState({ username: "", password: "" });
 
     const availableCities =
         formData.country === "India" && formData.state
@@ -114,152 +115,47 @@ export default function Auth() {
         setLoginData((cur) => ({ ...cur, [e.target.name]: e.target.value }));
     };
 
-    const handleAdminChange = (e) => {
-        setError("");
-        setAdminData((cur) => ({ ...cur, [e.target.name]: e.target.value }));
-    };
-
-    // ── Register ──────────────────────────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError("");
-        try {
-            const payload = {
-                name: formData.fullName,
-                email: formData.email,
-                phone: formData.phone,
-                password: formData.password,
-                userType: formData.role,
-                state: formData.state,
-                city: formData.city
-            };
-            const res = await axios.post(`${API_BASE_URL}/register`, payload);
-            if (res.data.success) {
-                localStorage.setItem("wastewise-token", res.data.token);
-                localStorage.setItem("wastewise-user", JSON.stringify(res.data.user));
-                navigate(`/dashboard/${res.data.user.role}`);
-            }
-        } catch (err) {
-            setError(err.response?.data?.message || "Registration failed. Please try again.");
-        } finally {
+        
+        // Simulate frontend-only registration logic
+        setTimeout(() => {
+            alert("Registration Successful! Now please use the hardcoded credentials to login.");
+            setAuthMode("login");
             setLoading(false);
-        }
+        }, 1000);
     };
 
-    // ── Login ─────────────────────────────────────────────────────────────
-    const handleLogin = async (e) => {
+    const handleLogin = (e) => {
         e.preventDefault();
         setLoading(true);
         setError("");
-        try {
-            const res = await axios.post(`${API_BASE_URL}/login`, loginData);
-            if (res.data.success) {
-                localStorage.setItem("wastewise-token", res.data.token);
-                localStorage.setItem("wastewise-user", JSON.stringify(res.data.user));
-                navigate(`/dashboard/${res.data.user.role}`);
-            }
-        } catch (err) {
-            setError(err.response?.data?.message || "Invalid username or password.");
-        } finally {
-            setLoading(false);
-        }
-    };
 
-    // ── Admin Login ───────────────────────────────────────────────────────
-    const handleAdminLogin = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError("");
-        try {
-            const res = await axios.post(`${API_BASE_URL}/login`, {
-                username: adminData.username,
-                password: adminData.password
-            });
-            if (res.data.success) {
-                if (res.data.user.role !== "admin") {
-                    setError("Access denied. Not an admin account.");
-                    setLoading(false);
-                    return;
-                }
-                localStorage.setItem("wastewise-token", res.data.token);
-                localStorage.setItem("wastewise-user", JSON.stringify(res.data.user));
-                setShowAdminModal(false);
-                navigate("/dashboard/admin");
-            }
-        } catch (err) {
-            setError(err.response?.data?.message || "Invalid admin credentials.");
-        } finally {
+        // Frontend-only matching logic
+        const matchedUser = MOCK_USERS.find(
+            u => u.email === loginData.username && u.password === loginData.password
+        );
+
+        if (matchedUser) {
+            localStorage.setItem("wastewise-token", "mock-frontend-token");
+            localStorage.setItem("wastewise-user", JSON.stringify({
+                name: matchedUser.name,
+                email: matchedUser.email,
+                role: matchedUser.role
+            }));
+            navigate(`/${matchedUser.role}`);
+        } else {
+            setError("Invalid credentials. Please use the hardcoded accounts.");
             setLoading(false);
         }
     };
 
     return (
         <section className="section auth-page">
-            {/* ── Admin Login Modal ───────────────────────────────────────── */}
-            {showAdminModal && (
-                <div className="admin-modal-overlay" onClick={() => setShowAdminModal(false)}>
-                    <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="admin-modal__header">
-                            <div className="admin-modal__icon">
-                                <i className="fas fa-shield-alt"></i>
-                            </div>
-                            <h4>Admin Access Portal</h4>
-                            <p>Restricted to authorized personnel only.</p>
-                            <button className="admin-modal__close" onClick={() => setShowAdminModal(false)}>
-                                <i className="fas fa-times"></i>
-                            </button>
-                        </div>
-                        {error && <div className="alert alert-danger py-2 mb-3 small">{error}</div>}
-                        <form onSubmit={handleAdminLogin} className="admin-modal__form">
-                            <div className="admin-input-group">
-                                <i className="fas fa-envelope"></i>
-                                <input
-                                    name="username"
-                                    type="email"
-                                    value={adminData.username}
-                                    onChange={handleAdminChange}
-                                    placeholder="Admin Email"
-                                    required
-                                />
-                            </div>
-                            <div className="admin-input-group">
-                                <i className="fas fa-lock"></i>
-                                <input
-                                    name="password"
-                                    type="password"
-                                    value={adminData.password}
-                                    onChange={handleAdminChange}
-                                    placeholder="Admin Password"
-                                    required
-                                    disabled={loading}
-                                />
-                            </div>
-                            <button type="submit" className="admin-modal__submit" disabled={loading}>
-                                {loading ? (
-                                    <><i className="fas fa-spinner fa-spin me-2"></i>Verifying...</>
-                                ) : (
-                                    <><i className="fas fa-sign-in-alt me-2"></i>Access Dashboard</>
-                                )}
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            )}
-
             <div className="container auth-layout auth-layout--centered">
                 <div className="auth-card auth-card--centered mx-auto">
-
-                    {/* ── Admin Button (top-right corner) ──────────────────── */}
-                    <button
-                        className="auth-admin-trigger"
-                        onClick={() => { setShowAdminModal(true); setError(""); }}
-                        title="Admin Login"
-                        type="button"
-                    >
-                        <i className="fas fa-shield-alt"></i>
-                        <span>Admin</span>
-                    </button>
 
                     <div className="auth-switch">
                         <button type="button" className={authMode === "register" ? "is-active" : ""} onClick={() => { setAuthMode("register"); setError(""); }}>
@@ -270,7 +166,7 @@ export default function Auth() {
                         </button>
                     </div>
 
-                    {error && !showAdminModal && (
+                    {error && (
                         <div className="alert alert-danger py-2 mb-3 small">{error}</div>
                     )}
 
@@ -278,23 +174,7 @@ export default function Auth() {
                         <form className="auth-form" onSubmit={handleSubmit}>
                             <h3>Create Your Account</h3>
 
-                            {/* Role: Only Citizen & MC — NO Admin */}
-                            <div className="auth-role-selector">
-                                <label
-                                    className={`auth-role-card ${formData.role === "citizen" ? "is-selected" : ""}`}
-                                    onClick={() => setFormData(f => ({ ...f, role: "citizen" }))}
-                                >
-                                    <i className="fas fa-user-circle"></i>
-                                    <span>Citizen</span>
-                                </label>
-                                <label
-                                    className={`auth-role-card ${formData.role === "mc" ? "is-selected" : ""}`}
-                                    onClick={() => setFormData(f => ({ ...f, role: "mc" }))}
-                                >
-                                    <i className="fas fa-city"></i>
-                                    <span>Municipal Corp (MC)</span>
-                                </label>
-                            </div>
+                            {/* Role selector removed as requested */}
 
                             <input name="fullName" value={formData.fullName} onChange={handleChange} placeholder="Full name" required />
                             <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Email address" required />
@@ -327,10 +207,10 @@ export default function Auth() {
 
                             <button
                                 type="submit"
-                                className={`button button--primary ${formData.role === "mc" ? "auth-button--mc" : ""}`}
+                                className="button button--primary"
                                 disabled={loading}
                             >
-                                {loading ? "Processing..." : formData.role === "mc" ? "Open MC Dashboard" : "Open Citizen Dashboard"}
+                                {loading ? "Processing..." : "Create Account"}
                             </button>
                         </form>
                     ) : (
