@@ -1,38 +1,58 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { cities, zones } from '../../../utils/dashboardData';
+import api from '../../../utils/api';
+import { useOutletContext } from 'react-router-dom';
 
 const Register = () => {
+    const { user } = useOutletContext();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         city: '',
         zone: '',
         ward: '',
-        location: ''
+        location: '',
+        phone: ''
     });
 
     useEffect(() => {
-        const saved = localStorage.getItem('citizen_registration');
-        if (saved) {
-            setFormData(JSON.parse(saved));
+        if (user) {
+            setFormData({
+                name: user.fullName || user.name || '',
+                email: user.email || '',
+                city: user.city || '',
+                zone: user.zone || '',
+                ward: user.ward || '',
+                location: user.location || '',
+                phone: user.phone || ''
+            });
         }
-    }, []);
+    }, [user]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        localStorage.setItem('citizen_registration', JSON.stringify(formData));
-        alert('Registration data saved successfully!');
+        try {
+            const res = await api.patch("/profile", formData);
+            if (res.data.success) {
+                toast.success('Registration details updated successfully!');
+                // Update local storage to reflect changes in UI immediately
+                localStorage.setItem("wastewise-user", JSON.stringify(res.data.user));
+            }
+        } catch (err) {
+            toast.error("Failed to update registration details.");
+        }
     };
 
     return (
         <div className="dashboard-section-wrap p-4">
             <header className="mb-4">
                 <h2 className="fw-bold">Register Itself</h2>
-                <p className="text-muted">Update your personal and residential details.</p>
+                <p className="text-muted">Update your personal and residential details to help us serve you better.</p>
             </header>
 
             <div className="dashboard-card p-4 shadow-sm border-0 bg-white">
@@ -50,15 +70,24 @@ const Register = () => {
                         />
                     </div>
                     <div className="col-md-6">
-                        <label className="form-label fw-bold small text-uppercase">Email Address</label>
+                        <label className="form-label fw-bold small text-uppercase">Email Address (Read-only)</label>
                         <input 
                             type="email" 
                             name="email"
                             className="form-control p-3 bg-light border-0" 
-                            placeholder="Email address" 
                             value={formData.email}
+                            readOnly
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <label className="form-label fw-bold small text-uppercase">Phone Number</label>
+                        <input 
+                            type="text" 
+                            name="phone"
+                            className="form-control p-3 bg-light border-0" 
+                            placeholder="Phone number" 
+                            value={formData.phone}
                             onChange={handleChange}
-                            required
                         />
                     </div>
                     <div className="col-md-6">
@@ -99,7 +128,7 @@ const Register = () => {
                             required
                         />
                     </div>
-                    <div className="col-md-6">
+                    <div className="col-12">
                         <label className="form-label fw-bold small text-uppercase">Specific Location</label>
                         <input 
                             type="text" 
@@ -113,7 +142,7 @@ const Register = () => {
                     </div>
                     <div className="col-12 mt-5 text-end">
                         <button type="submit" className="btn btn-primary px-5 py-3 shadow-sm fw-bold">
-                            Save Registration Data
+                            Update Registration Data
                         </button>
                     </div>
                 </form>

@@ -1,12 +1,28 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../../utils/api';
+import { toast } from 'react-toastify';
 
 const History = () => {
     const [complaints, setComplaints] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedComplaint, setSelectedComplaint] = useState(null);
 
     useEffect(() => {
-        const saved = JSON.parse(localStorage.getItem('complaints') || '[]');
-        setComplaints(saved);
+        fetchHistory();
     }, []);
+
+    const fetchHistory = async () => {
+        try {
+            setLoading(true);
+            const res = await api.get("/complaints");
+            setComplaints(res.data.complaints || []);
+        } catch (err) {
+            console.error("Error fetching history:", err);
+            toast.error("Failed to load complaint history.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -36,42 +52,41 @@ const History = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {complaints.length === 0 ? (
+                            {loading ? (
+                                <tr><td colSpan={5} className="text-center py-5">Loading history...</td></tr>
+                            ) : complaints.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="text-center py-5">
                                         <div className="text-muted mb-3">
                                             <i className="fas fa-history fa-3x opacity-25 mb-2"></i>
                                             <p>No complaints found in your history.</p>
                                         </div>
-                                        <button className="btn btn-outline-primary btn-sm" onClick={() => window.location.href='/citizen/complaint'}>
-                                            Report an Issue
-                                        </button>
                                     </td>
                                 </tr>
                             ) : (
                                 complaints.map((c) => (
-                                    <tr key={c.id}>
+                                    <tr key={c._id}>
                                         <td className="ps-4">
                                             <div className="d-flex align-items-center gap-3">
-                                                {c.image && (
-                                                    <img src={c.image} alt="Issue" className="rounded" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
+                                                {c.imageUrl && (
+                                                    <img src={`http://localhost:4000${c.imageUrl}`} alt="Issue" className="rounded" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
                                                 )}
-                                                <span className="fw-bold">{c.type || c.category}</span>
+                                                <span className="fw-bold text-primary">{c.category || c.type}</span>
                                             </div>
                                         </td>
                                         <td>
                                             <span className="small text-muted d-block">{c.city}, {c.zone}</span>
                                             <span className="fw-semibold">{c.location}</span>
                                         </td>
-                                        <td>{c.date}</td>
+                                        <td>{new Date(c.createdAt).toLocaleDateString()}</td>
                                         <td>
                                             <span className={`badge rounded-pill ${getStatusBadge(c.status)}`}>
                                                 {c.status}
                                             </span>
                                         </td>
                                         <td className="text-end pe-4">
-                                            <button className="btn btn-sm btn-light" onClick={() => alert(`Details: ${c.description}`)}>
-                                                <i className="fas fa-eye"></i>
+                                            <button className="btn btn-sm btn-outline-primary" onClick={() => setSelectedComplaint(c)}>
+                                                <i className="fas fa-eye me-1"></i> Details
                                             </button>
                                         </td>
                                     </tr>
@@ -81,6 +96,49 @@ const History = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Detail Modal */}
+            {selectedComplaint && (
+                <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content border-0 shadow">
+                            <div className="modal-header bg-light">
+                                <h5 className="modal-title fw-bold">Complaint Details</h5>
+                                <button type="button" className="btn-close" onClick={() => setSelectedComplaint(null)}></button>
+                            </div>
+                            <div className="modal-body p-4">
+                                {selectedComplaint.imageUrl && (
+                                    <div className="mb-4 text-center">
+                                        <img src={`http://localhost:4000${selectedComplaint.imageUrl}`} alt="Issue" className="img-fluid rounded shadow-sm border" style={{ maxHeight: '250px' }} />
+                                    </div>
+                                )}
+                                <div className="mb-3">
+                                    <label className="text-muted small fw-bold d-block text-uppercase">Status</label>
+                                    <span className={`badge rounded-pill ${getStatusBadge(selectedComplaint.status)}`}>
+                                        {selectedComplaint.status}
+                                    </span>
+                                </div>
+                                <div className="mb-3">
+                                    <label className="text-muted small fw-bold d-block text-uppercase">Category</label>
+                                    <p className="fw-bold">{selectedComplaint.category || selectedComplaint.type}</p>
+                                </div>
+                                <div className="mb-3">
+                                    <label className="text-muted small fw-bold d-block text-uppercase">Description</label>
+                                    <div className="p-3 bg-light rounded italic">{selectedComplaint.description || "No description provided."}</div>
+                                </div>
+                                <div className="mb-3">
+                                    <label className="text-muted small fw-bold d-block text-uppercase">Location</label>
+                                    <p className="mb-0">{selectedComplaint.location}, {selectedComplaint.ward}</p>
+                                    <p className="small text-muted">{selectedComplaint.city}, {selectedComplaint.zone}</p>
+                                </div>
+                            </div>
+                            <div className="modal-footer bg-light border-0">
+                                <button type="button" className="btn btn-secondary px-4" onClick={() => setSelectedComplaint(null)}>Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

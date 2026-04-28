@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import api from "../../../utils/api";
+import { toast } from "react-toastify";
 
 const ManageWorkers = () => {
     const { user } = useOutletContext();
     const [workers, setWorkers] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingWorker, setEditingWorker] = useState(null);
     const [formData, setFormData] = useState({
@@ -14,42 +17,62 @@ const ManageWorkers = () => {
     });
 
     useEffect(() => {
-        const savedWorkers = JSON.parse(localStorage.getItem('mc_workers') || '[]');
-        setWorkers(savedWorkers);
+        fetchWorkers();
     }, []);
 
-    const saveToLocal = (data) => {
-        localStorage.setItem('mc_workers', JSON.stringify(data));
-        setWorkers(data);
+    const fetchWorkers = async () => {
+        try {
+            setLoading(true);
+            const res = await api.get("/workers");
+            setWorkers(res.data.workers);
+        } catch (err) {
+            console.error("Error fetching workers:", err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (editingWorker) {
-            const updated = workers.map(w => w.id === editingWorker.id ? { ...formData, id: w.id } : w);
-            saveToLocal(updated);
-        } else {
-            const newWorker = { ...formData, id: Date.now() };
-            saveToLocal([...workers, newWorker]);
+        try {
+            if (editingWorker) {
+                const res = await api.patch(`/workers/${editingWorker._id}`, formData);
+                if (res.data.success) fetchWorkers();
+            } else {
+                const res = await api.post("/workers", formData);
+                if (res.data.success) fetchWorkers();
+            }
+            setFormData({ name: "", contact: "", area: "", role: "" });
+            setEditingWorker(null);
+            setShowForm(false);
+        } catch (err) {
+            toast.error("Failed to save worker details.");
         }
-        setFormData({ name: "", contact: "", area: "", role: "" });
-        setEditingWorker(null);
-        setShowForm(false);
     };
 
-    const deleteWorker = (id) => {
+    const deleteWorker = async (id) => {
         if (window.confirm("Are you sure?")) {
-            saveToLocal(workers.filter(w => w.id !== id));
+            try {
+                const res = await api.delete(`/workers/${id}`);
+                if (res.data.success) fetchWorkers();
+            } catch (err) {
+                toast.error("Failed to delete worker.");
+            }
         }
     };
 
     const startEdit = (worker) => {
         setEditingWorker(worker);
-        setFormData(worker);
+        setFormData({
+            name: worker.name,
+            contact: worker.contact,
+            area: worker.area,
+            role: worker.role
+        });
         setShowForm(true);
     };
 
@@ -113,15 +136,17 @@ const ManageWorkers = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {workers.length === 0 ? (
+                            {loading ? (
+                                <tr><td colSpan={5} className="text-center py-5">Loading workers...</td></tr>
+                            ) : workers.length === 0 ? (
                                 <tr><td colSpan={5} className="text-center py-5 text-muted">No workers registered yet.</td></tr>
                             ) : (
                                 workers.map((w) => (
-                                    <tr key={w.id}>
+                                    <tr key={w._id}>
                                         <td className="ps-4">
                                             <div className="d-flex align-items-center gap-2">
                                                 <div className="avatar-xs bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: 32, height: 32, background: '#10b981' }}>
-                                                    {w.name[0]}
+                                                    {w.name ? w.name[0] : "W"}
                                                 </div>
                                                 <span className="fw-bold">{w.name}</span>
                                             </div>
@@ -133,7 +158,7 @@ const ManageWorkers = () => {
                                             <button className="btn btn-sm btn-outline-primary me-2" onClick={() => startEdit(w)}>
                                                 <i className="fas fa-edit"></i>
                                             </button>
-                                            <button className="btn btn-sm btn-outline-danger" onClick={() => deleteWorker(w.id)}>
+                                            <button className="btn btn-sm btn-outline-danger" onClick={() => deleteWorker(w._id)}>
                                                 <i className="fas fa-trash"></i>
                                             </button>
                                         </td>

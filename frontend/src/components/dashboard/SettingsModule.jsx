@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const SettingsModule = () => {
     const { user } = useOutletContext();
@@ -19,7 +20,7 @@ const SettingsModule = () => {
                 <div className="col-lg-6">
                     <div className="dashboard-card p-4 h-100">
                         <h5 className="mb-4"><i className="fas fa-user-cog me-2" style={{ color: accentColor }}></i>Profile Settings</h5>
-                        <form onSubmit={(e) => { e.preventDefault(); alert('Profile updated!'); }}>
+                        <form onSubmit={(e) => { e.preventDefault(); toast.success('Profile updated!'); }}>
                             <div className="mb-3">
                                 <label className="form-label small fw-bold">Full Name</label>
                                 <input className="form-control" defaultValue={user?.fullName || user?.name} />
@@ -45,7 +46,7 @@ const SettingsModule = () => {
                 <div className="col-lg-6">
                     <div className="dashboard-card p-4 h-100">
                         <h5 className="mb-4"><i className="fas fa-shield-alt me-2" style={{ color: accentColor }}></i>Password & Security</h5>
-                        <form onSubmit={(e) => { e.preventDefault(); alert('Security settings updated!'); }}>
+                        <form onSubmit={(e) => { e.preventDefault(); toast.success('Security settings updated!'); }}>
                             <div className="mb-3">
                                 <label className="form-label small fw-bold">Current Password</label>
                                 <input type="password" name="oldPassword" className="form-control" placeholder="••••••••" />

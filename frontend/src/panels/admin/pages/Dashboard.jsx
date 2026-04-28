@@ -1,15 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import api from '../../../utils/api';
 
 const AdminDashboard = () => {
     const { user } = useOutletContext();
     const accentColor = "#10b981";
+    const [counts, setCounts] = useState({ mcs: 0, citizens: 0, complaints: 0 });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchMetrics = async () => {
+            try {
+                const [usersRes, complaintsRes] = await Promise.all([
+                    api.get("/users"),
+                    api.get("/complaints")
+                ]);
+                const users = usersRes.data.users || [];
+                setCounts({
+                    mcs: users.filter(u => u.role === 'mc' || u.userType === 'mc').length,
+                    citizens: users.filter(u => u.role === 'citizen' || u.userType === 'citizen').length,
+                    complaints: (complaintsRes.data.complaints || []).length
+                });
+            } catch (err) {
+                console.error("Failed to fetch metrics", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchMetrics();
+    }, []);
 
     const metrics = [
-        { label: "Registered MCs", value: "24", icon: "fa-building" },
-        { label: "Active Citizens", value: "1,540", icon: "fa-users" },
-        { label: "High Priority Alerts", value: "8", icon: "fa-exclamation-triangle" },
-        { label: "Total Complaints", value: "450", icon: "fa-file-invoice" }
+        { label: "Registered MCs", value: counts.mcs, icon: "fa-building" },
+        { label: "Active Citizens", value: counts.citizens, icon: "fa-users" },
+        { label: "Total Complaints", value: counts.complaints, icon: "fa-file-invoice" }
     ];
 
     return (

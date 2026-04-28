@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { cities, zones } from "../../../utils/dashboardData";
+import api from "../../../utils/api";
+import { toast } from "react-toastify";
 
 const Managemc = () => {
     const [mcUsers, setMcUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [form, setForm] = useState({ 
         fullName: "", 
         email: "", 
@@ -12,30 +15,91 @@ const Managemc = () => {
         ward: "", 
         location: "" 
     });
+    const [editingMc, setEditingMc] = useState(null);
 
     useEffect(() => {
-        const saved = JSON.parse(localStorage.getItem('admin_mcs') || '[]');
-        setMcUsers(saved);
+        fetchMCs();
     }, []);
+
+    const fetchMCs = async () => {
+        try {
+            setLoading(true);
+            const res = await api.get("/users");
+            const mcs = res.data.users.filter(u => u.userType === 'mc');
+            setMcUsers(mcs);
+        } catch (err) {
+            toast.error("Failed to fetch Municipal Corporations.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleChange = (e) =>
         setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-    const handleAddMC = (e) => {
+    const handleAddMC = async (e) => {
         e.preventDefault();
-        const newMC = { ...form, id: Date.now() };
-        const updated = [...mcUsers, newMC];
-        setMcUsers(updated);
-        localStorage.setItem('admin_mcs', JSON.stringify(updated));
-        setForm({ fullName: "", email: "", password: "", city: "", zone: "", ward: "", location: "" });
-        alert("Municipal Corporation added successfully!");
+        try {
+            const res = await api.post("/register", {
+                ...form,
+                name: form.fullName,
+                userType: "mc"
+            });
+            
+            if (res.data.success) {
+                toast.success("Municipal Corporation added successfully!");
+                setForm({ fullName: "", email: "", password: "", city: "", zone: "", ward: "", location: "" });
+                fetchMCs();
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to add MC account.");
+        }
     };
 
-    const handleDelete = (id) => {
+    const handleUpdateMC = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await api.patch(`/users/${editingMc._id}`, {
+                ...form,
+                name: form.fullName
+            });
+            
+            if (res.data.success) {
+                toast.success("MC account updated successfully!");
+                setEditingMc(null);
+                setForm({ fullName: "", email: "", password: "", city: "", zone: "", ward: "", location: "" });
+                fetchMCs();
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Failed to update MC account.");
+        }
+    };
+
+    const startEdit = (mc) => {
+        setEditingMc(mc);
+        setForm({
+            fullName: mc.name || mc.fullName || "",
+            email: mc.email || "",
+            password: "", // Don't show old password
+            city: mc.city || "",
+            zone: mc.zone || "",
+            ward: mc.ward || "",
+            location: mc.location || ""
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this MC?")) return;
-        const updated = mcUsers.filter((u) => u.id !== id);
-        setMcUsers(updated);
-        localStorage.setItem('admin_mcs', JSON.stringify(updated));
+        try {
+            const res = await api.delete(`/users/${id}`);
+            if (res.data.success) {
+                toast.success("MC account deleted.");
+                fetchMCs();
+            }
+        } catch (err) {
+            toast.error("Failed to delete MC account.");
+        }
     };
 
     return (
@@ -46,8 +110,8 @@ const Managemc = () => {
             </header>
 
             <div className="dashboard-card p-4 mb-4 shadow-sm border-0 bg-white">
-                <h5 className="fw-bold mb-4">Register New MC</h5>
-                <form onSubmit={handleAddMC}>
+                <h5 className="fw-bold mb-4">{editingMc ? "Edit MC Account" : "Register New MC"}</h5>
+                <form onSubmit={editingMc ? handleUpdateMC : handleAddMC}>
                     <div className="row g-3">
                         <div className="col-md-4">
                             <label className="form-label small fw-bold">Full Name</label>
@@ -60,9 +124,9 @@ const Managemc = () => {
                                 value={form.email} onChange={handleChange} required />
                         </div>
                         <div className="col-md-4">
-                            <label className="form-label small fw-bold">Password</label>
+                            <label className="form-label small fw-bold">Password {editingMc && "(Leave blank to keep current)"}</label>
                             <input className="form-control" name="password" type="password" placeholder="••••••••"
-                                value={form.password} onChange={handleChange} required />
+                                value={form.password} onChange={handleChange} required={!editingMc} />
                         </div>
                         <div className="col-md-3">
                             <label className="form-label small fw-bold">City</label>
@@ -88,9 +152,15 @@ const Managemc = () => {
                             <input className="form-control" name="location" placeholder="Office Location"
                                 value={form.location} onChange={handleChange} required />
                         </div>
-                        <div className="col-12 text-end">
+                        <div className="col-12 text-end gap-2 d-flex justify-content-end">
+                            {editingMc && (
+                                <button className="btn btn-light px-4" type="button" onClick={() => {
+                                    setEditingMc(null);
+                                    setForm({ fullName: "", email: "", password: "", city: "", zone: "", ward: "", location: "" });
+                                }}>Cancel</button>
+                            )}
                             <button className="btn btn-primary px-4" type="submit">
-                                Add MC Account
+                                {editingMc ? "Update MC Account" : "Add MC Account"}
                             </button>
                         </div>
                     </div>
@@ -110,13 +180,15 @@ const Managemc = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {mcUsers.length === 0 ? (
+                            {loading ? (
+                                <tr><td colSpan={5} className="text-center py-5">Loading Municipal Corporations...</td></tr>
+                            ) : mcUsers.length === 0 ? (
                                 <tr><td colSpan={5} className="text-center text-muted py-5">No Municipal Corporations found.</td></tr>
                             ) : (
                                 mcUsers.map((mc) => (
-                                    <tr key={mc.id}>
+                                    <tr key={mc._id}>
                                         <td className="ps-4">
-                                            <div className="fw-bold">{mc.fullName}</div>
+                                            <div className="fw-bold">{mc.name || mc.fullName}</div>
                                             <small className="text-muted">{mc.email}</small>
                                         </td>
                                         <td>
@@ -129,9 +201,14 @@ const Managemc = () => {
                                         </td>
                                         <td><span className="badge bg-success">Active</span></td>
                                         <td className="pe-4 text-end">
-                                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(mc.id)}>
-                                                <i className="fas fa-trash"></i>
-                                            </button>
+                                            <div className="d-flex gap-2 justify-content-end">
+                                                <button className="btn btn-sm btn-outline-primary" onClick={() => startEdit(mc)}>
+                                                    <i className="fas fa-edit"></i>
+                                                </button>
+                                                <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(mc._id)}>
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

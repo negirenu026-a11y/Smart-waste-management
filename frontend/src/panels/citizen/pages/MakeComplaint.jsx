@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { cities, zones } from '../../../utils/dashboardData';
+import api from '../../../utils/api';
+import { toast } from 'react-toastify';
 
 const MakeComplaint = () => {
     const [formData, setFormData] = useState({
@@ -14,6 +16,7 @@ const MakeComplaint = () => {
     });
 
     const [preview, setPreview] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -23,44 +26,53 @@ const MakeComplaint = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            setFormData({ ...formData, image: file });
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreview(reader.result);
-                setFormData({ ...formData, image: reader.result });
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
         
-        const registrationData = JSON.parse(localStorage.getItem('citizen_registration') || '{}');
-        
-        const newComplaint = {
-            id: Date.now(),
-            ...formData,
-            citizenName: registrationData.name || "Anonymous",
-            status: "Pending",
-            date: new Date().toLocaleDateString(),
-            type: formData.category // Using category as type for history consistency
-        };
+        try {
+            const data = new FormData();
+            data.append("image", formData.image);
+            data.append("area", formData.area);
+            data.append("location", formData.location);
+            data.append("ward", formData.ward);
+            data.append("zone", formData.zone);
+            data.append("city", formData.city);
+            data.append("category", formData.category);
+            data.append("description", formData.description);
 
-        const existingComplaints = JSON.parse(localStorage.getItem('complaints') || '[]');
-        localStorage.setItem('complaints', JSON.stringify([newComplaint, ...existingComplaints]));
-        
-        alert('Complaint submitted successfully!');
-        setFormData({
-            image: null,
-            area: '',
-            location: '',
-            ward: '',
-            zone: '',
-            city: '',
-            category: 'Other',
-            description: ''
-        });
-        setPreview(null);
+            const res = await api.post("/complaints", data, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+
+            if (res.data.success) {
+                toast.success('Complaint submitted successfully!');
+                setFormData({
+                    image: null,
+                    area: '',
+                    location: '',
+                    ward: '',
+                    zone: '',
+                    city: '',
+                    category: 'Other',
+                    description: ''
+                });
+                setPreview(null);
+            }
+        } catch (err) {
+            toast.error("Failed to submit complaint.");
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (

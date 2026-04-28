@@ -16,7 +16,7 @@ const complaintSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        enum: ["Food Waste", "Plastic / Dry Waste", "E-Waste", "Construction Debris", "Hazardous Waste", "Other"],
+        enum: ["Food", "Food Waste", "Plastic", "Plastic / Dry Waste", "E-Waste", "Construction Debris", "Hazardous Waste", "Other"],
         default: "Other"
     },
     description: {

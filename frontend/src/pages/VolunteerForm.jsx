@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 
 const VolunteerForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
-        alert('Thank you for applying! We will get back to you soon.');
+        toast.success('Thank you for applying! We will get back to you soon.');
     };
 
     return (

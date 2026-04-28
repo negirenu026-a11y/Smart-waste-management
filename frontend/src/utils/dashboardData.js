@@ -53,7 +53,8 @@ export const panelConfig = {
             { id: "manage-areas", label: "Manage Areas", icon: "fa-map-marked-alt", path: "manage-areas" },
             { id: "manage-citizens", label: "Manage Citizens", icon: "fa-users", path: "manage-citizens" },
             { id: "manage-complaints", label: "Manage Complaints", icon: "fa-file-invoice", path: "manage-complaints" },
-            { id: "manage-tasks", label: "Manage Tasks", icon: "fa-tasks", path: "manage-tasks" }
+            { id: "manage-tasks", label: "Manage Tasks", icon: "fa-tasks", path: "manage-tasks" },
+            { id: "review-reports", label: "Review Reports", icon: "fa-clipboard-check", path: "review-reports" }
         ]
     },
     mc: {

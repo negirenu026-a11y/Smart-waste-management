@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 
 const Donation = () => {
     const [showModal, setShowModal] = useState(false);
@@ -89,7 +90,7 @@ const Donation = () => {
                                         <label className="form-label small fw-bold">Message</label>
                                         <textarea className="form-control border-0 bg-light px-3 py-2" rows="3" placeholder="Leave a message"></textarea>
                                     </div>
-                                    <button type="submit" className="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm mt-3" onClick={(e) => { e.preventDefault(); alert('Thank you for your donation!'); setShowModal(false); }}>
+                                    <button type="submit" className="btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm mt-3" onClick={(e) => { e.preventDefault(); toast.success('Thank you for your donation!'); setShowModal(false); }}>
                                         Confirm Donation
                                     </button>
                                 </form>

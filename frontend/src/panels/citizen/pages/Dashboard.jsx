@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import api from "../../../utils/api";
 
 const CitizenDashboard = () => {
     const { user } = useOutletContext();
@@ -9,29 +10,37 @@ const CitizenDashboard = () => {
         inProcess: 0,
         resolved: 0
     });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const complaints = JSON.parse(localStorage.getItem('complaints') || '[]');
-        // In a real app, we'd filter by user email or ID. 
-        // For this demo, we'll show stats for all complaints or just the ones in storage.
-        const userComplaints = complaints; // Assuming all for now or filter if needed
-        
-        setStats({
-            total: userComplaints.length,
-            pending: userComplaints.filter(c => c.status === 'Pending').length,
-            inProcess: userComplaints.filter(c => c.status === 'In Process').length,
-            resolved: userComplaints.filter(c => c.status === 'Resolved').length
-        });
+        const fetchStats = async () => {
+            try {
+                setLoading(true);
+                const res = await api.get("/complaints");
+                const userComplaints = res.data.complaints || [];
+                
+                setStats({
+                    total: userComplaints.length,
+                    pending: userComplaints.filter(c => c.status === 'Pending').length,
+                    inProcess: userComplaints.filter(c => c.status === 'In Process').length,
+                    resolved: userComplaints.filter(c => c.status === 'Resolved').length
+                });
+            } catch (err) {
+                console.error("Failed to fetch citizen stats", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
     }, []);
 
-    // Get registration data if exists
-    const registrationData = JSON.parse(localStorage.getItem('citizen_registration') || '{}');
     const displayUser = {
-        name: registrationData.name || user?.name || "Guest Citizen",
-        email: registrationData.email || user?.email || "Not Provided",
-        city: registrationData.city || "Not Set",
-        zone: registrationData.zone || "Not Set",
-        ward: registrationData.ward || "Not Set"
+        name: user?.fullName || user?.name || "Guest Citizen",
+        email: user?.email || "Not Provided",
+        city: user?.city || "Not Set",
+        zone: user?.zone || "Not Set",
+        ward: user?.ward || "Not Set",
+        phone: user?.phone || "Not Set"
     };
 
     return (
@@ -66,15 +75,19 @@ const CitizenDashboard = () => {
                                 <p className="text-muted small mb-1 uppercase fw-bold">Ward</p>
                                 <p className="fw-semibold">{displayUser.ward}</p>
                             </div>
+                            <div className="col-sm-12">
+                                <p className="text-muted small mb-1 uppercase fw-bold">Phone</p>
+                                <p className="fw-semibold">{displayUser.phone}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div className="col-md-5">
                     <div className="dashboard-card p-4 h-100 shadow-sm border-0 bg-primary text-white">
-                        <h5 className="fw-bold mb-4 border-bottom border-white border-opacity-25 pb-2">Quick Stats</h5>
+                        <h5 className="fw-bold mb-4 border-bottom border-white border-opacity-25 pb-2">Your Activity</h5>
                         <div className="d-flex justify-content-between align-items-center mb-4">
                             <div>
-                                <h1 className="display-4 fw-bold mb-0">{stats.total}</h1>
+                                <h1 className="display-4 fw-bold mb-0">{loading ? "..." : stats.total}</h1>
                                 <p className="mb-0 opacity-75">Total Complaints</p>
                             </div>
                             <i className="fas fa-file-invoice fa-4x opacity-25"></i>
@@ -82,19 +95,19 @@ const CitizenDashboard = () => {
                         <div className="row text-center g-2">
                             <div className="col-4">
                                 <div className="bg-white bg-opacity-10 p-2 rounded">
-                                    <h4 className="fw-bold mb-0">{stats.pending}</h4>
+                                    <h4 className="fw-bold mb-0">{loading ? "..." : stats.pending}</h4>
                                     <p className="small mb-0 opacity-75">Pending</p>
                                 </div>
                             </div>
                             <div className="col-4">
                                 <div className="bg-white bg-opacity-10 p-2 rounded">
-                                    <h4 className="fw-bold mb-0">{stats.inProcess}</h4>
+                                    <h4 className="fw-bold mb-0">{loading ? "..." : stats.inProcess}</h4>
                                     <p className="small mb-0 opacity-75">In Process</p>
                                 </div>
                             </div>
                             <div className="col-4">
                                 <div className="bg-white bg-opacity-10 p-2 rounded">
-                                    <h4 className="fw-bold mb-0">{stats.resolved}</h4>
+                                    <h4 className="fw-bold mb-0">{loading ? "..." : stats.resolved}</h4>
                                     <p className="small mb-0 opacity-75">Resolved</p>
                                 </div>
                             </div>
@@ -107,7 +120,7 @@ const CitizenDashboard = () => {
                 <h5 className="fw-bold mb-3">System Information</h5>
                 <div className="alert alert-info border-0 shadow-sm">
                     <i className="fas fa-info-circle me-2"></i>
-                    Ensure your registration details are up to date in the "Register Itself" section for accurate complaint tracking.
+                    Track your reported issues in real-time. Our municipal teams are working to resolve them as quickly as possible.
                 </div>
             </div>
         </div>

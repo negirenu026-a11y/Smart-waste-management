@@ -1,16 +1,22 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { panelConfig } from '../../utils/dashboardData';
+import api from '../../utils/api';
 
 const DashboardSidebar = ({ role }) => {
     const navigate = useNavigate();
     const config = panelConfig[role] || panelConfig.citizen;
     const accentColor = "#10b981"; // Premium Green
 
-    const handleLogout = () => {
-        localStorage.removeItem("wastewise-user");
-        localStorage.removeItem("wastewise-token");
-        navigate("/auth", { replace: true });
+    const handleLogout = async () => {
+        try {
+            await api.post("/logout");
+        } catch (err) {
+            console.error("Logout API failed", err);
+        } finally {
+            localStorage.removeItem("wastewise-user");
+            navigate("/auth", { replace: true });
+        }
     };
 
     return (
@@ -42,14 +48,6 @@ const DashboardSidebar = ({ role }) => {
 
 
             <div className="dashboard-sidebar__actions">
-                <NavLink
-                    to={`/${role}/settings`}
-                    className={({ isActive }) => `dashboard-subnav__item ${isActive ? "is-active" : ""}`}
-                    style={({ isActive }) => isActive ? { background: accentColor, color: "#fff" } : {}}
-                >
-                    <i className="fas fa-cog" />
-                    <span>Settings</span>
-                </NavLink>
                 <button className="dashboard-subnav__item dashboard-subnav__item--logout" onClick={handleLogout}>
                     <i className="fas fa-sign-out-alt" />
                     <span>Logout</span>

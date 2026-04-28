@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { initialTasks } from "../../../utils/dashboardData";
+import api from "../../../utils/api";
 
 const ManageTasks = () => {
     const [tasks, setTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Read from the same key used by MC panel
-        const saved = JSON.parse(localStorage.getItem('mc_tasks') || '[]');
-        if (saved.length > 0) {
-            setTasks(saved);
-        } else {
-            setTasks(initialTasks);
-        }
+        fetchTasks();
     }, []);
+
+    const fetchTasks = async () => {
+        try {
+            setLoading(true);
+            const res = await api.get("/tasks");
+            setTasks(res.data.tasks);
+        } catch (err) {
+            console.error("Error fetching tasks:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -34,31 +41,33 @@ const ManageTasks = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {tasks.length === 0 ? (
+                            {loading ? (
+                                <tr><td colSpan={5} className="text-center py-5">Loading tasks Oversight...</td></tr>
+                            ) : tasks.length === 0 ? (
                                 <tr><td colSpan={5} className="text-center py-5 text-muted">No tasks records found.</td></tr>
                             ) : (
                                 tasks.map((task) => (
-                                    <tr key={task.id}>
+                                    <tr key={task._id}>
                                         <td className="ps-4">
                                             <p className="fw-bold mb-0">{task.title}</p>
-                                            <span className="text-muted small">ID: #{task.id}</span>
+                                            <span className="text-muted small">ID: #{task._id.substring(0, 8)}</span>
                                         </td>
                                         <td>
                                             <div className="d-flex align-items-center gap-2">
-                                                <img src={task.workerPhoto || `https://ui-avatars.com/api/?name=${task.assignedTo}`} alt="Worker" className="rounded-circle" style={{ width: '30px', height: '30px' }} />
-                                                <span>{task.assignedTo}</span>
+                                                <img src={task.workerPhoto || `https://ui-avatars.com/api/?name=${task.assignedTo || "Worker"}`} alt="Worker" className="rounded-circle" style={{ width: '30px', height: '30px' }} />
+                                                <span>{task.assignedTo || "Unassigned"}</span>
                                             </div>
                                         </td>
-                                        <td>{task.deadline}</td>
+                                        <td>{task.deadline || "No deadline"}</td>
                                         <td>
-                                            <span className={`badge ${task.status === 'Completed' ? 'bg-success' : task.status === 'In Progress' ? 'bg-warning text-dark' : 'bg-secondary'}`}>
+                                            <span className={`badge ${task.status === 'Completed' || task.status === 'Resolved' ? 'bg-success' : task.status === 'In Progress' ? 'bg-warning text-dark' : 'bg-secondary'}`}>
                                                 {task.status}
                                             </span>
                                         </td>
                                         <td className="text-end pe-4">
                                             {task.proofImage ? (
-                                                <div className="d-inline-block position-relative group" style={{ cursor: 'pointer' }} onClick={() => window.open(task.proofImage)}>
-                                                    <img src={task.proofImage} alt="Proof" className="rounded shadow-sm border" style={{ width: '60px', height: '40px', objectFit: 'cover' }} />
+                                                <div className="d-inline-block position-relative group" style={{ cursor: 'pointer' }} onClick={() => window.open(`http://localhost:4000${task.proofImage}`)}>
+                                                    <img src={`http://localhost:4000${task.proofImage}`} alt="Proof" className="rounded shadow-sm border" style={{ width: '60px', height: '40px', objectFit: 'cover' }} />
                                                     <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-25 d-flex align-items-center justify-content-center opacity-0 hover-opacity-100 transition-all rounded">
                                                         <i className="fas fa-search-plus text-white"></i>
                                                     </div>

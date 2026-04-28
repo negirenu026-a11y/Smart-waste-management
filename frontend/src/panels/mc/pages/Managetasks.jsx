@@ -1,35 +1,54 @@
 import React, { useState, useEffect } from "react";
-import { initialTasks } from "../../../utils/dashboardData";
+import api from "../../../utils/api";
+import { toast } from "react-toastify";
 
 const ManageTasks = () => {
     const [tasks, setTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const saved = JSON.parse(localStorage.getItem('mc_tasks'));
-        if (saved && saved.length > 0) {
-            setTasks(saved);
-        } else {
-            setTasks(initialTasks.map(t => ({ ...t, workersCount: Math.floor(Math.random() * 5) + 1 })));
-        }
+        fetchTasks();
     }, []);
 
-    const updateTaskStatus = (id, status) => {
-        const updated = tasks.map(t => t.id === id ? { ...t, status } : t);
-        setTasks(updated);
-        localStorage.setItem('mc_tasks', JSON.stringify(updated));
+    const fetchTasks = async () => {
+        try {
+            setLoading(true);
+            const res = await api.get("/tasks");
+            setTasks(res.data.tasks);
+        } catch (err) {
+            console.error("Error fetching tasks:", err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleProofUpload = (id, e) => {
+    const updateTaskStatus = async (id, status) => {
+        try {
+            const res = await api.patch(`/tasks/${id}`, { status });
+            if (res.data.success) {
+                fetchTasks();
+            }
+        } catch (err) {
+            toast.error("Failed to update task status.");
+        }
+    };
+
+    const handleProofUpload = async (id, e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const updated = tasks.map(t => t.id === id ? { ...t, proofImage: reader.result, status: 'Completed' } : t);
-                setTasks(updated);
-                localStorage.setItem('mc_tasks', JSON.stringify(updated));
-                alert('Proof image uploaded and task marked as Completed!');
-            };
-            reader.readAsDataURL(file);
+            try {
+                const formData = new FormData();
+                formData.append("proof", file);
+                const res = await api.patch(`/tasks/${id}`, formData, {
+                    headers: { "Content-Type": "multipart/form-data" }
+                });
+                if (res.data.success) {
+                    toast.success('Proof uploaded — task completed!');
+                    fetchTasks();
+                }
+            } catch (err) {
+                toast.error("Failed to upload proof.");
+            }
         }
     };
 
@@ -54,63 +73,69 @@ const ManageTasks = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {tasks.map((task) => (
-                                <tr key={task.id}>
-                                    <td className="ps-4 fw-bold">{task.title}</td>
-                                    <td>
-                                        <div className="d-flex align-items-center gap-2">
-                                            <img src={task.workerPhoto || `https://ui-avatars.com/api/?name=${task.assignedTo}`} alt="Worker" className="rounded-circle" style={{ width: '30px', height: '30px' }} />
-                                            <span>{task.assignedTo}</span>
-                                        </div>
-                                    </td>
-                                    <td>{task.deadline}</td>
-                                    <td className="text-center">
-                                        <span className="badge bg-info">{task.workersCount || 3}</span>
-                                    </td>
-                                    <td>
-                                        <span className={`badge ${task.status === 'Completed' ? 'bg-success' : task.status === 'In Progress' ? 'bg-warning text-dark' : 'bg-secondary'}`}>
-                                            {task.status}
-                                        </span>
-                                    </td>
-                                    <td className="text-end pe-4">
-                                        <div className="d-flex gap-2 justify-content-end align-items-center">
-                                            {task.status !== 'Completed' ? (
-                                                <>
-                                                    <select 
-                                                        className="form-select form-select-sm w-auto"
-                                                        value={task.status}
-                                                        onChange={(e) => updateTaskStatus(task.id, e.target.value)}
-                                                    >
-                                                        <option value="Pending">Pending</option>
-                                                        <option value="In Progress">In Progress</option>
-                                                        <option value="Completed">Completed</option>
-                                                    </select>
-                                                    {task.status === 'In Progress' && (
-                                                        <div className="position-relative">
-                                                            <button className="btn btn-sm btn-outline-success">
-                                                                <i className="fas fa-upload me-1"></i> Proof
-                                                            </button>
-                                                            <input 
-                                                                type="file" 
-                                                                className="position-absolute top-0 start-0 opacity-0 w-100 h-100" 
-                                                                style={{ cursor: 'pointer' }}
-                                                                onChange={(e) => handleProofUpload(task.id, e)}
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <div className="d-flex align-items-center gap-2">
-                                                    {task.proofImage && (
-                                                        <img src={task.proofImage} alt="Proof" className="rounded border" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
-                                                    )}
-                                                    <span className="text-success small fw-bold">Verified</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            {loading ? (
+                                <tr><td colSpan={5} className="text-center py-5">Loading tasks...</td></tr>
+                            ) : tasks.length === 0 ? (
+                                <tr><td colSpan={5} className="text-center py-5 text-muted">No tasks found.</td></tr>
+                            ) : (
+                                tasks.map((task) => (
+                                    <tr key={task._id}>
+                                        <td className="ps-4 fw-bold">{task.title}</td>
+                                        <td>
+                                            <div className="d-flex align-items-center gap-2">
+                                                <img src={task.workerPhoto || `https://ui-avatars.com/api/?name=${task.assignedTo || "Worker"}`} alt="Worker" className="rounded-circle" style={{ width: '30px', height: '30px' }} />
+                                                <span>{task.assignedTo || "Unassigned"}</span>
+                                            </div>
+                                        </td>
+                                        <td>{task.deadline || "N/A"}</td>
+                                        <td className="text-center">
+                                            <span className="badge bg-info">{task.workersCount || 1}</span>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${task.status === 'Completed' || task.status === 'Resolved' ? 'bg-success' : task.status === 'In Progress' ? 'bg-warning text-dark' : 'bg-secondary'}`}>
+                                                {task.status}
+                                            </span>
+                                        </td>
+                                        <td className="text-end pe-4">
+                                            <div className="d-flex gap-2 justify-content-end align-items-center">
+                                                {task.status !== 'Completed' && task.status !== 'Resolved' ? (
+                                                    <>
+                                                        <select 
+                                                            className="form-select form-select-sm w-auto"
+                                                            value={task.status}
+                                                            onChange={(e) => updateTaskStatus(task._id, e.target.value)}
+                                                        >
+                                                            <option value="Pending">Pending</option>
+                                                            <option value="In Progress">In Progress</option>
+                                                            <option value="Completed">Completed</option>
+                                                        </select>
+                                                        {task.status === 'In Progress' && (
+                                                            <div className="position-relative">
+                                                                <button className="btn btn-sm btn-outline-success">
+                                                                    <i className="fas fa-upload me-1"></i> Proof
+                                                                </button>
+                                                                <input 
+                                                                    type="file" 
+                                                                    className="position-absolute top-0 start-0 opacity-0 w-100 h-100" 
+                                                                    style={{ cursor: 'pointer' }}
+                                                                    onChange={(e) => handleProofUpload(task._id, e)}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <div className="d-flex align-items-center gap-2">
+                                                        {task.proofImage && (
+                                                            <img src={`http://localhost:4000${task.proofImage}`} alt="Proof" className="rounded border" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
+                                                        )}
+                                                        <span className="text-success small fw-bold">Verified</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>

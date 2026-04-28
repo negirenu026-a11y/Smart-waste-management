@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import api from "../../../utils/api";
 
 const McDashboard = () => {
     const { user } = useOutletContext();
@@ -10,18 +11,29 @@ const McDashboard = () => {
         tasks: 0,
         complaints: 0
     });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Load counts from localStorage
-        const workers = JSON.parse(localStorage.getItem('mc_workers') || '[]');
-        const tasks = JSON.parse(localStorage.getItem('mc_tasks') || '[]');
-        const complaints = JSON.parse(localStorage.getItem('mc_complaints') || '[]');
-        
-        setStats({
-            workers: workers.length,
-            tasks: tasks.filter(t => t.status !== 'Resolved').length,
-            complaints: complaints.filter(c => c.status !== 'Resolved').length
-        });
+        const fetchStats = async () => {
+            try {
+                setLoading(true);
+                const [workersRes, tasksRes, complaintsRes] = await Promise.all([
+                    api.get("/workers"),
+                    api.get("/tasks"),
+                    api.get("/complaints")
+                ]);
+                setStats({
+                    workers: (workersRes.data.workers || []).length,
+                    tasks: (tasksRes.data.tasks || []).filter(t => t.status !== 'Resolved' && t.status !== 'Completed').length,
+                    complaints: (complaintsRes.data.complaints || []).filter(c => c.status !== 'Resolved').length
+                });
+            } catch (err) {
+                console.error("Failed to fetch dashboard stats", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
     }, []);
 
     const quickActions = [

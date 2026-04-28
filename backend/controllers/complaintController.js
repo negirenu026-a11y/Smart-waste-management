@@ -15,8 +15,8 @@ exports.createComplaint = async (req, res) => {
         const newComplaint = new Complaint({
             citizenId,
             citizenName,
-            type,
-            category,
+            type: type || category || "Other",
+            category: category || type || "Other",
             description,
             area,
             location,
@@ -47,6 +47,15 @@ exports.getAllComplaints = async (req, res) => {
         // Citizens can only see their own complaints
         if (req.user?.role === "citizen") {
             filter.citizenId = req.user.id;
+        }
+
+        // MCs can only see complaints in their assigned city
+        if (req.user?.role === "mc") {
+            // Find the MC user to get their city
+            const mcUser = await User.findById(req.user.id);
+            if (mcUser && mcUser.city) {
+                filter.city = mcUser.city;
+            }
         }
 
         const complaints = await Complaint.find(filter).sort({ createdAt: -1 });

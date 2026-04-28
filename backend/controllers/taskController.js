@@ -24,14 +24,21 @@ exports.createTask = async (req, res) => {
 // Update task
 exports.updateTask = async (req, res) => {
     try {
+        const updateData = { ...req.body };
+        if (req.file) {
+            updateData.proofImage = `/uploads/${req.file.filename}`;
+            updateData.status = 'Completed'; // Automatically complete on proof upload if preferred
+        }
+
         const task = await Task.findOneAndUpdate(
             { _id: req.params.id, isDeleted: false },
-            req.body,
+            updateData,
             { new: true }
         );
         if (!task) return res.status(404).json({ success: false, message: "Task not found or archived." });
         res.status(200).json({ success: true, task });
     } catch (err) {
+        console.error("UpdateTask Error:", err);
         res.status(500).json({ success: false, message: err.message });
     }
 };

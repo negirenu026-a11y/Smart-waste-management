@@ -11,9 +11,8 @@ const DashboardLayout = ({ role }) => {
 
     useEffect(() => {
         const storedUser = localStorage.getItem("wastewise-user");
-        const token = localStorage.getItem("wastewise-token");
 
-        if (!storedUser || !token) {
+        if (!storedUser) {
             navigate("/auth", { replace: true });
             return;
         }

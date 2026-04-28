@@ -32,6 +32,18 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    zone: {
+        type: String,
+        default: ""
+    },
+    ward: {
+        type: String,
+        default: ""
+    },
+    location: {
+        type: String,
+        default: ""
+    },
     userType: {
         type: String,
         enum: ["admin", "citizen", "mc"],

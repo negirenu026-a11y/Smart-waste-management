@@ -1,5 +1,7 @@
 import React from 'react'
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom"
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import MainLayout from './Layouts/MainLayout'
 import DashboardLayout from './Layouts/DashboardLayout'
 
@@ -41,9 +43,12 @@ import McReports from './panels/mc/pages/WeeklyReport'
 import SettingsModule from './components/dashboard/SettingsModule'
 
 
+import AdminReports from './panels/admin/pages/AdminReports'
+
 const App = () => {
   return (
     <BrowserRouter>
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover theme="colored" />
       <Routes>
         {/* Public Routes */}
         <Route path='/auth' element={<Auth />} />
@@ -69,6 +74,7 @@ const App = () => {
           <Route path='manage-citizens' element={<Managecitizens />} />
           <Route path='manage-complaints' element={<Managecomplaints />} />
           <Route path='manage-tasks' element={<Managetasks />} />
+          <Route path='review-reports' element={<AdminReports />} />
           <Route path='settings' element={<SettingsModule />} />
         </Route>
 
@@ -76,6 +82,7 @@ const App = () => {
         <Route path='/citizen' element={<DashboardLayout role="citizen" />}>
           <Route index element={<CitizenDashboard />} />
           <Route path='register' element={<Register />} />
+          <Route path='settings' element={<SettingsModule />} />
           <Route path='*' element={<CitizenRoutes />} />
         </Route>
 

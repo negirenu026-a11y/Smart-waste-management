@@ -21,7 +21,7 @@ const generateToken = (user) => {
 // POST /api/register
 exports.registerUser = async (req, res) => {
     try {
-        const { name, email, phone, password, userType, state, city } = req.body;
+        const { name, email, phone, password, userType, state, city, zone, ward, location } = req.body;
 
         // Prevent admin registration via API
         if (userType === "admin") {
@@ -50,17 +50,39 @@ exports.registerUser = async (req, res) => {
             password: hashedPassword,
             userType,
             state: state || "",
-            city: city || ""
+            city: city || "",
+            zone: zone || "",
+            ward: ward || "",
+            location: location || ""
         });
 
         await newUser.save();
 
         const token = generateToken(newUser);
 
+        // Set cookie
+        // Set cookie ONLY if not an admin creating another user
+        const adminToken = req.cookies.access_token;
+        let isAdminCreating = false;
+        if (adminToken) {
+            try {
+                const decoded = jwt.verify(adminToken, JWT_SECRET);
+                if (decoded.role === 'admin') isAdminCreating = true;
+            } catch (e) {}
+        }
+
+        if (!isAdminCreating) {
+            res.cookie("access_token", token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "Lax",
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
+        }
+
         res.status(201).json({
             success: true,
             message: "User registered successfully",
-            token,
             user: {
                 id: newUser._id,
                 fullName: newUser.name,
@@ -80,17 +102,18 @@ exports.registerUser = async (req, res) => {
 // POST /api/login
 exports.loginUser = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, email, password } = req.body;
+        const identifier = username || email;
 
-        if (!username || !password) {
-            return res.status(400).json({ success: false, message: "Username and password are required." });
+        if (!identifier || !password) {
+            return res.status(400).json({ success: false, message: "Username/Email and password are required." });
         }
 
         // Find user by email or name (case-insensitive)
         const user = await User.findOne({
             $or: [
-                { email: username.toLowerCase() },
-                { name: { $regex: new RegExp(`^${username}$`, "i") } }
+                { email: identifier.toLowerCase() },
+                { name: { $regex: new RegExp(`^${identifier.trim()}$`, "i") } }
             ],
             isDeleted: false
         });
@@ -107,10 +130,17 @@ exports.loginUser = async (req, res) => {
 
         const token = generateToken(user);
 
+        // Set cookie
+        res.cookie("access_token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
         res.status(200).json({
             success: true,
             message: "Login successful",
-            token,
             user: {
                 id: user._id,
                 fullName: user.name,
@@ -126,6 +156,12 @@ exports.loginUser = async (req, res) => {
         console.error("Login Error:", err);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
+};
+
+// POST /api/logout
+exports.logoutUser = async (req, res) => {
+    res.clearCookie("access_token");
+    res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 
 // GET /api/users — Admin only: list all non-deleted users
@@ -151,6 +187,80 @@ exports.softDeleteUser = async (req, res) => {
         res.status(200).json({ success: true, message: "User deleted successfully." });
     } catch (err) {
         console.error("SoftDelete Error:", err);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// PATCH /api/users/:id — Update user details (Admin only)
+exports.updateUser = async (req, res) => {
+    try {
+        const { name, email, phone, password, state, city, userType, zone, ward, location } = req.body;
+        const updateData = {};
+        
+        if (name) updateData.name = name;
+        if (email) updateData.email = email.toLowerCase();
+        if (phone) updateData.phone = phone;
+        if (state) updateData.state = state;
+        if (city) updateData.city = city;
+        if (userType) updateData.userType = userType;
+        if (zone) updateData.zone = zone;
+        if (ward) updateData.ward = ward;
+        if (location) updateData.location = location;
+
+        if (password && password.trim() !== "") {
+            updateData.password = await bcrypt.hash(password, 10);
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+        ).select("-password");
+
+        if (!user) return res.status(404).json({ success: false, message: "User not found." });
+
+        res.status(200).json({ success: true, message: "User updated successfully.", user });
+    } catch (err) {
+        console.error("UpdateUser Error:", err);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// PATCH /api/profile — Update current user profile
+exports.updateProfile = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { name, phone, state, city, zone, ward, location } = req.body;
+        
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (phone) updateData.phone = phone;
+        if (state) updateData.state = state;
+        if (city) updateData.city = city;
+        if (zone) updateData.zone = zone;
+        if (ward) updateData.ward = ward;
+        if (location) updateData.location = location;
+
+        const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
+        
+        res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            user: {
+                id: updatedUser._id,
+                fullName: updatedUser.name,
+                email: updatedUser.email,
+                role: updatedUser.userType,
+                phone: updatedUser.phone,
+                state: updatedUser.state,
+                city: updatedUser.city,
+                zone: updatedUser.zone,
+                ward: updatedUser.ward,
+                location: updatedUser.location
+            }
+        });
+    } catch (err) {
+        console.error("UpdateProfile Error:", err);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 };

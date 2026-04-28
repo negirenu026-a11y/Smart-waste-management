@@ -1,7 +1,16 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
+
+// Ensure uploads directory exists (prevents ENOENT from multer)
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log("📁 Created uploads directory.");
+}
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -14,9 +23,10 @@ const cityDataRoutes = require("./routes/cityDataRoutes");
 
 // ── Middleware ─────────────────────────────────────────────────────────────
 app.use(cors({
-    origin: true,
+    origin: ["http://localhost:5173", "http://localhost:3000"], // Explicitly set origins for cookies
     credentials: true
 }));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

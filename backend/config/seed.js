@@ -31,22 +31,22 @@ const seedAdmin = async () => {
 
 const seedSampleData = async () => {
     try {
-        // ALWAYS clear and re-seed to ensure fresh state
-        await Promise.all([
-            User.deleteMany({ userType: { $ne: "admin" } }),
-            Complaint.deleteMany({}),
-            Worker.deleteMany({}),
-            Task.deleteMany({})
-        ]);
-        console.log("🧹 Previous data cleared.");
+        // Only seed if no non-admin users exist
+        const userCount = await User.countDocuments({ userType: { $ne: "admin" } });
+        if (userCount > 0) {
+            console.log("ℹ️ Sample data already exists, skipping seed.");
+            return;
+        }
+
+        console.log("🌱 Seeding initial sample data...");
 
         const hashedPassword = await bcrypt.hash("123456", 10);
 
         // ── 1. Create MC Users ────────────────────────────────────────────────
         const mcUsers = await User.insertMany([
-            { name: "North Municipal Corp", email: "north_mc@wastewise.com", password: hashedPassword, userType: "mc", city: "North Delhi", state: "Delhi", phone: "9871000001" },
-            { name: "South Municipal Corp", email: "south_mc@wastewise.com", password: hashedPassword, userType: "mc", city: "South Mumbai", state: "Maharashtra", phone: "9822000001" },
-            { name: "East Municipal Corp", email: "east_mc@wastewise.com", password: hashedPassword, userType: "mc", city: "East Kolkata", state: "West Bengal", phone: "9833000001" }
+            { name: "North Municipal Corp", email: "north_mc@wastewise.com", password: hashedPassword, userType: "mc", city: "Shimla", state: "HP", phone: "9871000001", zone: "North", ward: "Ward 1", location: "Main Office" },
+            { name: "South Municipal Corp", email: "south_mc@wastewise.com", password: hashedPassword, userType: "mc", city: "Manali", state: "HP", phone: "9822000001", zone: "South", ward: "Ward 5", location: "Town Hall" },
+            { name: "East Municipal Corp", email: "east_mc@wastewise.com", password: hashedPassword, userType: "mc", city: "Dharamshala", state: "HP", phone: "9833000001", zone: "East", ward: "Ward 10", location: "DC Office" }
         ]);
 
         // ── 2. Create Citizen Users ─────────────────────────────────────────────

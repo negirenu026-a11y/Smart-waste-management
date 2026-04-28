@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../utils/api';
+import { toast } from 'react-toastify';
 import './Auth.css';
 
 const countryOptions = [
@@ -120,34 +122,43 @@ export default function Auth() {
         setLoading(true);
         setError("");
         
-        // Simulate frontend-only registration logic
-        setTimeout(() => {
-            alert("Registration Successful! Now please use the hardcoded credentials to login.");
-            setAuthMode("login");
+        try {
+            const res = await api.post("/register", {
+                ...formData,
+                name: formData.fullName,
+                userType: "citizen" // Default registration is for citizens
+            });
+            if (res.data.success) {
+                toast.success("Registration Successful! Please login.");
+                setAuthMode("login");
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || "Registration failed.");
+        } finally {
             setLoading(false);
-        }, 1000);
+        }
     };
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError("");
 
-        // Frontend-only matching logic
-        const matchedUser = MOCK_USERS.find(
-            u => u.email === loginData.username && u.password === loginData.password
-        );
+        try {
+            const res = await api.post("/login", {
+                username: loginData.username,
+                password: loginData.password
+            });
 
-        if (matchedUser) {
-            localStorage.setItem("wastewise-token", "mock-frontend-token");
-            localStorage.setItem("wastewise-user", JSON.stringify({
-                name: matchedUser.name,
-                email: matchedUser.email,
-                role: matchedUser.role
-            }));
-            navigate(`/${matchedUser.role}`);
-        } else {
-            setError("Invalid credentials. Please use the hardcoded accounts.");
+            if (res.data.success) {
+                const { user } = res.data;
+                // Store user info for UI (but token is in HTTP-only cookie)
+                localStorage.setItem("wastewise-user", JSON.stringify(user));
+                navigate(`/${user.role}`);
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || "Invalid credentials.");
+        } finally {
             setLoading(false);
         }
     };

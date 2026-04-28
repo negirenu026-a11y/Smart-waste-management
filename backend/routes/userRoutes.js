@@ -7,6 +7,9 @@ const userController = require("../controllers/userController");
 const complaintController = require("../controllers/complaintController");
 const workerController = require("../controllers/workerController");
 const taskController = require("../controllers/taskController");
+const reportController = require("../controllers/reportController");
+const areaController = require("../controllers/areaController");
+const feedbackController = require("../controllers/feedbackController");
 const { authMiddleware, requireRole } = require("../middleware/authMiddleware");
 
 // ── Multer: File Upload Config ─────────────────────────────────────────────
@@ -20,6 +23,7 @@ const storage = multer.diskStorage({
     }
 });
 
+// Image Upload
 const upload = multer({
     storage,
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
@@ -32,13 +36,33 @@ const upload = multer({
     }
 });
 
+// PDF Upload
+const uploadPDF = multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (ext === '.pdf') return cb(null, true);
+        cb(new Error("Only PDF files are allowed."));
+    }
+});
+
 // ── Auth Routes ────────────────────────────────────────────────────────────
 router.post("/register", userController.registerUser);
 router.post("/login", userController.loginUser);
+router.post("/logout", userController.logoutUser);
 
 // ── User Management Routes (Admin only) ────────────────────────────────────
 router.get("/users", authMiddleware, requireRole("admin"), userController.getAllUsers);
+router.patch("/users/:id", authMiddleware, requireRole("admin"), userController.updateUser);
+router.patch("/profile", authMiddleware, userController.updateProfile);
 router.delete("/users/:id", authMiddleware, requireRole("admin"), userController.softDeleteUser);
+
+// ── Area Routes (Admin only)
+router.get("/areas", authMiddleware, areaController.getAllAreas);
+router.post("/areas", authMiddleware, requireRole("admin"), areaController.createArea);
+router.patch("/areas/:id", authMiddleware, requireRole("admin"), areaController.updateArea);
+router.delete("/areas/:id", authMiddleware, requireRole("admin"), areaController.deleteArea);
 
 // ── Complaint Routes ────────────────────────────────────────────────────────
 router.post("/complaints", authMiddleware, upload.single("image"), complaintController.createComplaint);
@@ -55,7 +79,16 @@ router.delete("/workers/:id", authMiddleware, requireRole("mc", "admin"), worker
 // ── Task Routes ────────────────────────────────────────────────────────────
 router.get("/tasks", authMiddleware, taskController.getAllTasks);
 router.post("/tasks", authMiddleware, requireRole("mc", "admin"), taskController.createTask);
-router.patch("/tasks/:id", authMiddleware, requireRole("mc", "admin"), taskController.updateTask);
+router.patch("/tasks/:id", authMiddleware, requireRole("mc", "admin"), upload.single("proof"), taskController.updateTask);
 router.delete("/tasks/:id", authMiddleware, requireRole("mc", "admin"), taskController.deleteTask);
+
+// ── Report Routes ──────────────────────────────────────────────────────────
+router.get("/reports", authMiddleware, reportController.getAllReports);
+router.post("/reports", authMiddleware, requireRole("mc"), uploadPDF.single("report"), reportController.submitReport);
+router.patch("/reports/:id/respond", authMiddleware, requireRole("admin"), reportController.respondToReport);
+
+// ── Feedback Routes
+router.get("/feedback", authMiddleware, feedbackController.getAllFeedback);
+router.post("/feedback", authMiddleware, requireRole("citizen"), feedbackController.createFeedback);
 
 module.exports = router;

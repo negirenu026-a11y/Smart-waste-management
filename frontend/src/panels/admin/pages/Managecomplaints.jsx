@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import api from "../../../utils/api";
+import { toast } from "react-toastify";
 
 const STATUS_COLORS = {
     Pending: "#ef4444",
@@ -9,23 +11,48 @@ const STATUS_COLORS = {
 const Managecomplaints = () => {
     const [complaints, setComplaints] = useState([]);
     const [filter, setFilter] = useState("All");
+    const [loading, setLoading] = useState(true);
+    const [selectedComplaint, setSelectedComplaint] = useState(null);
 
     useEffect(() => {
-        const saved = JSON.parse(localStorage.getItem('complaints') || '[]');
-        setComplaints(saved);
+        fetchComplaints();
     }, []);
 
-    const handleStatusChange = (id, newStatus) => {
-        const updated = complaints.map(c => c.id === id ? { ...c, status: newStatus } : c);
-        setComplaints(updated);
-        localStorage.setItem('complaints', JSON.stringify(updated));
+    const fetchComplaints = async () => {
+        try {
+            setLoading(true);
+            const res = await api.get("/complaints");
+            setComplaints(res.data.complaints || []);
+        } catch (err) {
+            toast.error("Failed to fetch complaints.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleDelete = (id) => {
+    const handleStatusChange = async (id, newStatus) => {
+        try {
+            await api.patch(`/complaints/${id}/status`, { status: newStatus });
+            toast.success(`Status updated to ${newStatus}`);
+            fetchComplaints();
+            if (selectedComplaint?._id === id) {
+                setSelectedComplaint(prev => ({ ...prev, status: newStatus }));
+            }
+        } catch (err) {
+            toast.error("Failed to update status.");
+        }
+    };
+
+    const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this complaint record?")) return;
-        const updated = complaints.filter(c => c.id !== id);
-        setComplaints(updated);
-        localStorage.setItem('complaints', JSON.stringify(updated));
+        try {
+            await api.delete(`/complaints/${id}`);
+            toast.success("Complaint archived.");
+            fetchComplaints();
+            if (selectedComplaint?._id === id) setSelectedComplaint(null);
+        } catch (err) {
+            toast.error("Failed to delete complaint.");
+        }
     };
 
     const filtered = filter === "All" ? complaints : complaints.filter((c) => c.status === filter);
@@ -38,9 +65,11 @@ const Managecomplaints = () => {
 
     return (
         <div className="dashboard-section-wrap p-4">
-            <header className="mb-4">
-                <h2 className="fw-bold">Global Complaint Management</h2>
-                <p className="text-muted">Monitor and track waste management issues across all cities and zones.</p>
+            <header className="mb-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 className="fw-bold">Global Complaint Management</h2>
+                    <p className="text-muted">Monitor and track waste management issues across all cities and zones.</p>
+                </div>
             </header>
 
             <div className="row g-4 mb-4">
@@ -70,18 +99,20 @@ const Managecomplaints = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filtered.length === 0 ? (
+                            {loading ? (
+                                <tr><td colSpan={5} className="text-center py-5">Loading complaints...</td></tr>
+                            ) : filtered.length === 0 ? (
                                 <tr><td colSpan={5} className="text-center text-muted py-5">No records found for the selected category.</td></tr>
                             ) : (
                                 filtered.map((c) => (
-                                    <tr key={c.id}>
-                                        <td className="ps-4">
+                                    <tr key={c._id}>
+                                        <td className="ps-4" style={{ cursor: 'pointer' }} onClick={() => setSelectedComplaint(c)}>
                                             <div className="d-flex align-items-center gap-3">
-                                                {c.image && (
-                                                    <img src={c.image} alt="Issue" className="rounded" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
+                                                {c.imageUrl && (
+                                                    <img src={`http://localhost:4000${c.imageUrl}`} alt="Issue" className="rounded" style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
                                                 )}
                                                 <div>
-                                                    <div className="fw-bold">{c.category || c.type}</div>
+                                                    <div className="fw-bold text-primary">{c.category || c.type}</div>
                                                     <div className="small text-muted">By: {c.citizenName}</div>
                                                 </div>
                                             </div>
@@ -101,14 +132,17 @@ const Managecomplaints = () => {
                                         </td>
                                         <td className="pe-4 text-end">
                                             <div className="d-flex gap-2 justify-content-end">
+                                                <button className="btn btn-sm btn-outline-info" onClick={() => setSelectedComplaint(c)} title="View Details">
+                                                    <i className="fas fa-eye"></i>
+                                                </button>
                                                 <select 
                                                     className="form-select form-select-sm w-auto"
                                                     value={c.status || "Pending"}
-                                                    onChange={(e) => handleStatusChange(c.id, e.target.value)}
+                                                    onChange={(e) => handleStatusChange(c._id, e.target.value)}
                                                 >
                                                     {Object.keys(STATUS_COLORS).map(s => <option key={s}>{s}</option>)}
                                                 </select>
-                                                <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(c.id)}>
+                                                <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(c._id)}>
                                                     <i className="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -120,6 +154,80 @@ const Managecomplaints = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Complaint Detail Modal */}
+            {selectedComplaint && (
+                <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog modal-lg modal-dialog-centered">
+                        <div className="modal-content border-0 shadow">
+                            <div className="modal-header bg-light">
+                                <h5 className="modal-title fw-bold">Complaint Details</h5>
+                                <button type="button" className="btn-close" onClick={() => setSelectedComplaint(null)}></button>
+                            </div>
+                            <div className="modal-body p-4">
+                                <div className="row g-4">
+                                    <div className="col-md-6">
+                                        {selectedComplaint.imageUrl ? (
+                                            <img src={`http://localhost:4000${selectedComplaint.imageUrl}`} alt="Issue" className="img-fluid rounded shadow-sm" style={{ maxHeight: '300px', width: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div className="bg-light rounded d-flex align-items-center justify-content-center" style={{ height: '200px' }}>
+                                                <i className="fas fa-image fa-3x text-muted"></i>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="col-md-6">
+                                        <h4 className="fw-bold mb-1">{selectedComplaint.category || selectedComplaint.type}</h4>
+                                        <div className="mb-3">
+                                            <span className="badge" style={{ backgroundColor: `${STATUS_COLORS[selectedComplaint.status || 'Pending']}15`, color: STATUS_COLORS[selectedComplaint.status || 'Pending'], border: `1px solid ${STATUS_COLORS[selectedComplaint.status || 'Pending']}30` }}>
+                                                {selectedComplaint.status || "Pending"}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="mb-3">
+                                            <label className="text-muted small fw-bold d-block">Description</label>
+                                            <p className="mb-0">{selectedComplaint.description || "No description provided."}</p>
+                                        </div>
+
+                                        <div className="row g-2 mb-3">
+                                            <div className="col-6">
+                                                <label className="text-muted small fw-bold d-block">Citizen</label>
+                                                <span>{selectedComplaint.citizenName}</span>
+                                            </div>
+                                            <div className="col-6">
+                                                <label className="text-muted small fw-bold d-block">Reported On</label>
+                                                <span>{new Date(selectedComplaint.createdAt).toLocaleDateString()}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="mb-3 p-3 bg-light rounded">
+                                            <label className="text-muted small fw-bold d-block mb-1">Location Details</label>
+                                            <p className="mb-1 small"><strong>City:</strong> {selectedComplaint.city}</p>
+                                            <p className="mb-1 small"><strong>Zone:</strong> {selectedComplaint.zone}</p>
+                                            <p className="mb-1 small"><strong>Ward:</strong> {selectedComplaint.ward}</p>
+                                            <p className="mb-0 small"><strong>Location:</strong> {selectedComplaint.location}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="modal-footer bg-light border-0">
+                                <div className="d-flex w-100 justify-content-between align-items-center">
+                                    <div className="d-flex gap-2 align-items-center">
+                                        <label className="small fw-bold">Update Status:</label>
+                                        <select 
+                                            className="form-select form-select-sm w-auto"
+                                            value={selectedComplaint.status || "Pending"}
+                                            onChange={(e) => handleStatusChange(selectedComplaint._id, e.target.value)}
+                                        >
+                                            {Object.keys(STATUS_COLORS).map(s => <option key={s}>{s}</option>)}
+                                        </select>
+                                    </div>
+                                    <button type="button" className="btn btn-secondary px-4" onClick={() => setSelectedComplaint(null)}>Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
