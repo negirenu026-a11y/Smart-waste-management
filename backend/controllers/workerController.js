@@ -3,7 +3,11 @@ const Worker = require("../models/workerModel");
 // Get all workers (Admin/MC)
 exports.getAllWorkers = async (req, res) => {
     try {
-        const workers = await Worker.find({ isDeleted: false }).sort({ createdAt: -1 });
+        let filter = { isDeleted: false };
+        if (req.user?.role === "mc") {
+            filter.mcId = req.user.id;
+        }
+        const workers = await Worker.find(filter).sort({ createdAt: -1 });
         res.status(200).json({ success: true, workers });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
@@ -13,7 +17,10 @@ exports.getAllWorkers = async (req, res) => {
 // Create worker
 exports.createWorker = async (req, res) => {
     try {
-        const newWorker = new Worker(req.body);
+        const newWorker = new Worker({
+            ...req.body,
+            mcId: req.user.id
+        });
         await newWorker.save();
         res.status(201).json({ success: true, worker: newWorker });
     } catch (err) {

@@ -2,6 +2,7 @@ const User = require("../models/userModel");
 const Complaint = require("../models/complaintModel");
 const Worker = require("../models/workerModel");
 const Task = require("../models/taskModel");
+const Area = require("../models/areaModel");
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
@@ -72,6 +73,13 @@ const seedSampleData = async () => {
         await Task.insertMany([
             { title: "Clear Bin 42", assignedTo: "Rahul Sharma", deadline: "Today", status: "Pending", priority: "High" },
             { title: "Area Sweep - Bandra", assignedTo: "Anita Devi", deadline: "Tomorrow", status: "In Progress", priority: "Medium" }
+        ]);
+
+        // ── 6. Create Areas ─────────────────────────────────────────────────────
+        await Area.insertMany([
+            { name: "Mall Road", city: "Shimla", zone: "Central", ward: "Ward 1", location: "Near Ridge" },
+            { name: "Lower Bazar", city: "Shimla", zone: "North", ward: "Ward 2", location: "Main Market" },
+            { name: "Mallital", city: "Manali", zone: "South", ward: "Ward 5", location: "Mall Road Area" }
         ]);
 
         console.log("✅ Sample data (Non-Kangra) seeded successfully.");

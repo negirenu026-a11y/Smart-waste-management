@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { cities, zones } from '../../../utils/dashboardData';
+import React, { useState, useEffect } from 'react';
 import api from '../../../utils/api';
 import { toast } from 'react-toastify';
 
 const MakeComplaint = () => {
+    const [areas, setAreas] = useState([]);
     const [formData, setFormData] = useState({
         image: null,
         area: '',
@@ -18,9 +18,39 @@ const MakeComplaint = () => {
     const [preview, setPreview] = useState(null);
     const [submitting, setSubmitting] = useState(false);
 
+    useEffect(() => {
+        fetchAvailableAreas();
+    }, []);
+
+    const fetchAvailableAreas = async () => {
+        try {
+            const res = await api.get("/areas");
+            setAreas(res.data.areas || []);
+        } catch (err) {
+            console.error("Error fetching areas:", err);
+            toast.error("Failed to load operational areas.");
+        }
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        
+        // Reset dependent fields when higher level selection changes
+        if (name === 'city') {
+            setFormData({ ...formData, city: value, zone: '', area: '', location: '', ward: '' });
+        } else if (name === 'zone') {
+            setFormData({ ...formData, zone: value, area: '', location: '', ward: '' });
+        } else if (name === 'area') {
+            const selectedArea = areas.find(a => a.name === value);
+            setFormData({ 
+                ...formData, 
+                area: value, 
+                location: selectedArea ? selectedArea.location : '',
+                ward: selectedArea ? selectedArea.ward : ''
+            });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const handleImageChange = (e) => {
@@ -37,6 +67,10 @@ const MakeComplaint = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!formData.image) {
+            toast.warning("Please upload an evidence image.");
+            return;
+        }
         setSubmitting(true);
         
         try {
@@ -75,35 +109,30 @@ const MakeComplaint = () => {
         }
     };
 
+    // Derive dropdown options from fetched areas
+    const availableCities = [...new Set(areas.map(a => a.city))];
+    const availableZones = [...new Set(areas.filter(a => a.city === formData.city).map(a => a.zone))];
+    const availableSpecificAreas = areas.filter(a => a.city === formData.city && a.zone === formData.zone);
+
     return (
         <div className="dashboard-section-wrap p-4">
             <header className="mb-4">
-                <h2 className="fw-bold">Make a Complaint</h2>
-                <p className="text-muted">Report waste management issues in your area.</p>
+                <h2 className="fw-bold">Report an Issue</h2>
+                <p className="text-muted">Submit a waste management complaint for your specific area.</p>
             </header>
 
             <div className="dashboard-card p-4 shadow-sm border-0 bg-white">
                 <form onSubmit={handleSubmit} className="row g-4">
                     <div className="col-md-12">
-                        <label className="form-label fw-bold small text-uppercase">Upload Evidence Image</label>
-                        <div className="d-flex align-items-start gap-4">
-                            <div 
-                                className="border rounded d-flex align-items-center justify-content-center bg-light" 
-                                style={{ width: '150px', height: '150px', overflow: 'hidden' }}
-                            >
-                                {preview ? (
-                                    <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : (
-                                    <i className="fas fa-camera fa-2x text-muted"></i>
-                                )}
+                        <label className="form-label fw-bold small text-uppercase">Evidence Image</label>
+                        <div className="d-flex align-items-center gap-4">
+                            <div className="border rounded d-flex align-items-center justify-content-center bg-light shadow-sm" style={{ width: '120px', height: '120px', overflow: 'hidden' }}>
+                                {preview ? <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fas fa-camera fa-2x text-muted"></i>}
                             </div>
-                            <input 
-                                type="file" 
-                                accept="image/*"
-                                className="form-control" 
-                                onChange={handleImageChange}
-                                required
-                            />
+                            <div className="flex-grow-1">
+                                <input type="file" accept="image/*" className="form-control p-3" onChange={handleImageChange} required />
+                                <small className="text-muted mt-1 d-block">Upload a clear photo of the waste issue.</small>
+                            </div>
                         </div>
                     </div>
 
@@ -111,45 +140,50 @@ const MakeComplaint = () => {
                         <label className="form-label fw-bold small text-uppercase">City</label>
                         <select name="city" className="form-select p-3 bg-light border-0" value={formData.city} onChange={handleChange} required>
                             <option value="">Select City</option>
-                            {cities.map(city => <option key={city} value={city}>{city}</option>)}
+                            {availableCities.map(city => <option key={city} value={city}>{city}</option>)}
                         </select>
                     </div>
                     <div className="col-md-4">
                         <label className="form-label fw-bold small text-uppercase">Zone</label>
-                        <select name="zone" className="form-select p-3 bg-light border-0" value={formData.zone} onChange={handleChange} required>
+                        <select name="zone" className="form-select p-3 bg-light border-0" value={formData.zone} onChange={handleChange} required disabled={!formData.city}>
                             <option value="">Select Zone</option>
-                            {zones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
+                            {availableZones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
                         </select>
+                    </div>
+                    <div className="col-md-4">
+                        <label className="form-label fw-bold small text-uppercase">Specific Area</label>
+                        <select name="area" className="form-select p-3 bg-light border-0" value={formData.area} onChange={handleChange} required disabled={!formData.zone}>
+                            <option value="">Select Area</option>
+                            {availableSpecificAreas.map(a => <option key={a._id} value={a.name}>{a.name}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="col-md-4">
+                        <label className="form-label fw-bold small text-uppercase">Ward</label>
+                        <input type="text" name="ward" className="form-control p-3 bg-light border-0" value={formData.ward} readOnly placeholder="Auto-filled" />
+                    </div>
+                    <div className="col-md-4">
+                        <label className="form-label fw-bold small text-uppercase">Location Info</label>
+                        <input type="text" name="location" className="form-control p-3 bg-light border-0" value={formData.location} readOnly placeholder="Auto-filled" />
                     </div>
                     <div className="col-md-4">
                         <label className="form-label fw-bold small text-uppercase">Category</label>
                         <select name="category" className="form-select p-3 bg-light border-0" value={formData.category} onChange={handleChange} required>
-                            <option value="Food">Food Waste</option>
+                            <option value="Food Waste">Food Waste</option>
                             <option value="Plastic">Plastic Waste</option>
+                            <option value="E-Waste">E-Waste</option>
+                            <option value="Hazardous Waste">Hazardous Waste</option>
                             <option value="Other">Other</option>
                         </select>
                     </div>
 
-                    <div className="col-md-4">
-                        <label className="form-label fw-bold small text-uppercase">Area</label>
-                        <input type="text" name="area" className="form-control p-3 bg-light border-0" placeholder="e.g. Sector 5" value={formData.area} onChange={handleChange} required />
-                    </div>
-                    <div className="col-md-4">
-                        <label className="form-label fw-bold small text-uppercase">Ward</label>
-                        <input type="text" name="ward" className="form-control p-3 bg-light border-0" placeholder="e.g. Ward 12" value={formData.ward} onChange={handleChange} required />
-                    </div>
-                    <div className="col-md-4">
-                        <label className="form-label fw-bold small text-uppercase">Specific Location</label>
-                        <input type="text" name="location" className="form-control p-3 bg-light border-0" placeholder="e.g. Near Park Gate" value={formData.location} onChange={handleChange} required />
-                    </div>
-
                     <div className="col-12">
-                        <label className="form-label fw-bold small text-uppercase">Issue Description</label>
+                        <label className="form-label fw-bold small text-uppercase">Detailed Description</label>
                         <textarea 
                             name="description"
                             className="form-control p-3 bg-light border-0" 
                             rows="4" 
-                            placeholder="Provide more details about the issue..."
+                            placeholder="Please describe the issue in detail..."
                             value={formData.description}
                             onChange={handleChange}
                             required
@@ -157,8 +191,8 @@ const MakeComplaint = () => {
                     </div>
 
                     <div className="col-12 text-end">
-                        <button type="submit" className="btn btn-success px-5 py-3 shadow-sm fw-bold">
-                            Submit Complaint
+                        <button type="submit" className="btn btn-success px-5 py-3 shadow-sm fw-bold" disabled={submitting}>
+                            {submitting ? "Submitting..." : "Submit Complaint"}
                         </button>
                     </div>
                 </form>

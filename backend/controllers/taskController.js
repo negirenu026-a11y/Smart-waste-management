@@ -3,7 +3,11 @@ const Task = require("../models/taskModel");
 // Get all tasks (Admin/MC)
 exports.getAllTasks = async (req, res) => {
     try {
-        const tasks = await Task.find({ isDeleted: false }).sort({ createdAt: -1 });
+        let filter = { isDeleted: false };
+        if (req.user?.role === "mc") {
+            filter.mcId = req.user.id;
+        }
+        const tasks = await Task.find(filter).sort({ createdAt: -1 });
         res.status(200).json({ success: true, tasks });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
@@ -13,7 +17,10 @@ exports.getAllTasks = async (req, res) => {
 // Create task
 exports.createTask = async (req, res) => {
     try {
-        const newTask = new Task(req.body);
+        const newTask = new Task({
+            ...req.body,
+            mcId: req.user.id
+        });
         await newTask.save();
         res.status(201).json({ success: true, task: newTask });
     } catch (err) {

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { cities, zones } from "../../../utils/dashboardData";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
 
 const Managemc = () => {
     const [mcUsers, setMcUsers] = useState([]);
+    const [areas, setAreas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [form, setForm] = useState({ 
         fullName: "", 
@@ -19,6 +19,7 @@ const Managemc = () => {
 
     useEffect(() => {
         fetchMCs();
+        fetchAreas();
     }, []);
 
     const fetchMCs = async () => {
@@ -34,8 +35,25 @@ const Managemc = () => {
         }
     };
 
-    const handleChange = (e) =>
-        setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const fetchAreas = async () => {
+        try {
+            const res = await api.get("/areas");
+            setAreas(res.data.areas || []);
+        } catch (err) {
+            console.error("Error fetching areas:", err);
+        }
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        if (name === 'city') {
+            setForm((prev) => ({ ...prev, city: value, zone: '', ward: '', location: '' }));
+        } else if (name === 'zone') {
+            setForm((prev) => ({ ...prev, zone: value, ward: '', location: '' }));
+        } else {
+            setForm((prev) => ({ ...prev, [name]: value }));
+        }
+    };
 
     const handleAddMC = async (e) => {
         e.preventDefault();
@@ -80,7 +98,7 @@ const Managemc = () => {
         setForm({
             fullName: mc.name || mc.fullName || "",
             email: mc.email || "",
-            password: "", // Don't show old password
+            password: "",
             city: mc.city || "",
             zone: mc.zone || "",
             ward: mc.ward || "",
@@ -90,7 +108,7 @@ const Managemc = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this MC?")) return;
+        if (!window.confirm("Are you sure?")) return;
         try {
             const res = await api.delete(`/users/${id}`);
             if (res.data.success) {
@@ -102,11 +120,16 @@ const Managemc = () => {
         }
     };
 
+    // Derive dropdown options from fetched areas
+    const availableCities = [...new Set(areas.map(a => a.city))];
+    const availableZones = [...new Set(areas.filter(a => a.city === form.city).map(a => a.zone))];
+    const availableWards = [...new Set(areas.filter(a => a.city === form.city && a.zone === form.zone).map(a => a.ward))];
+
     return (
         <div className="dashboard-section-wrap p-4">
             <header className="mb-4">
                 <h2 className="fw-bold">Manage Municipal Corporations</h2>
-                <p className="text-muted">Register and monitor municipal corporation accounts.</p>
+                <p className="text-muted">Assign MCs to specific registered operational areas.</p>
             </header>
 
             <div className="dashboard-card p-4 mb-4 shadow-sm border-0 bg-white">
@@ -128,39 +151,43 @@ const Managemc = () => {
                             <input className="form-control" name="password" type="password" placeholder="••••••••"
                                 value={form.password} onChange={handleChange} required={!editingMc} />
                         </div>
+                        
                         <div className="col-md-3">
-                            <label className="form-label small fw-bold">City</label>
+                            <label className="form-label small fw-bold">Assigned City</label>
                             <select className="form-select" name="city" value={form.city} onChange={handleChange} required>
                                 <option value="">Select City</option>
-                                {cities.map(c => <option key={c} value={c}>{c}</option>)}
+                                {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
                         <div className="col-md-3">
-                            <label className="form-label small fw-bold">Zone</label>
-                            <select className="form-select" name="zone" value={form.zone} onChange={handleChange} required>
+                            <label className="form-label small fw-bold">Assigned Zone</label>
+                            <select className="form-select" name="zone" value={form.zone} onChange={handleChange} required disabled={!form.city}>
                                 <option value="">Select Zone</option>
-                                {zones.map(z => <option key={z} value={z}>{z}</option>)}
+                                {availableZones.map(z => <option key={z} value={z}>{z}</option>)}
                             </select>
                         </div>
-                        <div className="col-md-2">
-                            <label className="form-label small fw-bold">Ward</label>
-                            <input className="form-control" name="ward" placeholder="Ward 5"
-                                value={form.ward} onChange={handleChange} required />
+                        <div className="col-md-3">
+                            <label className="form-label small fw-bold">Primary Ward</label>
+                            <select className="form-select" name="ward" value={form.ward} onChange={handleChange} required disabled={!form.zone}>
+                                <option value="">Select Ward</option>
+                                {availableWards.map(w => <option key={w} value={w}>{w}</option>)}
+                            </select>
                         </div>
-                        <div className="col-md-4">
-                            <label className="form-label small fw-bold">Location</label>
-                            <input className="form-control" name="location" placeholder="Office Location"
+                        <div className="col-md-3">
+                            <label className="form-label small fw-bold">Office Location</label>
+                            <input className="form-control" name="location" placeholder="e.g. Town Hall"
                                 value={form.location} onChange={handleChange} required />
                         </div>
-                        <div className="col-12 text-end gap-2 d-flex justify-content-end">
+
+                        <div className="col-12 text-end gap-2 d-flex justify-content-end mt-4">
                             {editingMc && (
                                 <button className="btn btn-light px-4" type="button" onClick={() => {
                                     setEditingMc(null);
                                     setForm({ fullName: "", email: "", password: "", city: "", zone: "", ward: "", location: "" });
                                 }}>Cancel</button>
                             )}
-                            <button className="btn btn-primary px-4" type="submit">
-                                {editingMc ? "Update MC Account" : "Add MC Account"}
+                            <button className="btn btn-primary px-4 fw-bold" type="submit">
+                                {editingMc ? "Update MC account" : "Register MC account"}
                             </button>
                         </div>
                     </div>
@@ -173,7 +200,7 @@ const Managemc = () => {
                         <thead className="table-light">
                             <tr>
                                 <th className="ps-4">MC Name</th>
-                                <th>Regional Info</th>
+                                <th>Assigned Jurisdiction</th>
                                 <th>Ward & Location</th>
                                 <th>Status</th>
                                 <th className="pe-4 text-end">Actions</th>
@@ -188,18 +215,20 @@ const Managemc = () => {
                                 mcUsers.map((mc) => (
                                     <tr key={mc._id}>
                                         <td className="ps-4">
-                                            <div className="fw-bold">{mc.name || mc.fullName}</div>
+                                            <div className="fw-bold text-primary">{mc.name || mc.fullName}</div>
                                             <small className="text-muted">{mc.email}</small>
                                         </td>
                                         <td>
-                                            <p className="mb-0"><strong>City:</strong> {mc.city}</p>
-                                            <p className="mb-0"><strong>Zone:</strong> {mc.zone}</p>
+                                            <div className="d-flex flex-column">
+                                                <span className="fw-bold">{mc.city}</span>
+                                                <span className="small text-muted">{mc.zone} Zone</span>
+                                            </div>
                                         </td>
                                         <td>
                                             <p className="mb-0"><strong>Ward:</strong> {mc.ward}</p>
                                             <p className="mb-0 small text-muted">{mc.location}</p>
                                         </td>
-                                        <td><span className="badge bg-success">Active</span></td>
+                                        <td><span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Active</span></td>
                                         <td className="pe-4 text-end">
                                             <div className="d-flex gap-2 justify-content-end">
                                                 <button className="btn btn-sm btn-outline-primary" onClick={() => startEdit(mc)}>

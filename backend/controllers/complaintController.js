@@ -1,4 +1,5 @@
 const Complaint = require("../models/complaintModel");
+const User = require("../models/userModel");
 const path = require("path");
 
 // POST /api/complaints — Create a new complaint
@@ -51,10 +52,11 @@ exports.getAllComplaints = async (req, res) => {
 
         // MCs can only see complaints in their assigned city
         if (req.user?.role === "mc") {
-            // Find the MC user to get their city
+            // Find the MC user to get their city and zone
             const mcUser = await User.findById(req.user.id);
-            if (mcUser && mcUser.city) {
-                filter.city = mcUser.city;
+            if (mcUser) {
+                if (mcUser.city) filter.city = mcUser.city;
+                if (mcUser.zone) filter.zone = mcUser.zone;
             }
         }
 
