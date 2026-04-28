@@ -10,6 +10,7 @@ const port = process.env.PORT || 4000;
 const connectDB = require("./config/db");
 const seedAll = require("./config/seed");
 const routes = require("./routes/userRoutes");
+const cityDataRoutes = require("./routes/cityDataRoutes");
 
 // ── Middleware ─────────────────────────────────────────────────────────────
 app.use(cors({
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
 
 // ── API Routes ─────────────────────────────────────────────────────────────
 app.use("/api", routes);
+app.use("/api/city-data", cityDataRoutes);
 
 // ── 404 Handler ────────────────────────────────────────────────────────────
 app.use((req, res) => {

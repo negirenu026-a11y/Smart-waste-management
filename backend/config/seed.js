@@ -8,16 +8,16 @@ const mongoose = require("mongoose");
 
 const seedAdmin = async () => {
     try {
-        const email = process.env.ADMIN_EMAIL || "negirenu026@gmail.com";
+        const email = process.env.ADMIN_EMAIL;
         const existing = await User.findOne({ email });
         if (!existing) {
-            const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || "123456", 10);
+            const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
             await new User({
-                name: process.env.ADMIN_NAME || "RENU",
+                name: process.env.ADMIN_NAME,
                 email,
                 password: hashedPassword,
-                phone: process.env.ADMIN_PHONE || "9876543210",
-                address: process.env.ADMIN_ADDRESS || "mohali",
+                phone: process.env.ADMIN_PHONE,
+                address: process.env.ADMIN_ADDRESS,
                 userType: "admin",
                 city: "System",
                 state: "Global"

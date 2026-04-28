@@ -1,54 +1,59 @@
-function Services() {
-  const services = [
-    {
-      title: 'Forest Regeneration',
-      description: 'Plant trees and restore forest corridors across vulnerable land.',
-      icon: 'bi-tree-fill',
-    },
-    {
-      title: 'Clean Water Projects',
-      description: 'Protect rivers and provide clean water access to communities.',
-      icon: 'bi-droplet-fill',
-    },
-    {
-      title: 'Climate Education',
-      description: 'Run workshops that empower citizens and schools to act sustainably.',
-      icon: 'bi-mortarboard-fill',
-    },
-    {
-      title: 'Wildlife Protection',
-      description: 'Rescue and rehabilitate wildlife while safeguarding habitats.',
-      icon: 'bi-heart-fill',
-    },
-  ]
+import React from 'react';
+import './services.css';
 
-  return (
-    <section className="section py-5">
-      <div className="container">
-        <div className="section-heading text-center mb-5">
-          <span className="eyebrow text-brand">Our services</span>
-          <h2 className="fw-bold">Support that drives action</h2>
-          <p className="text-secondary mx-auto" style={{ maxWidth: '700px' }}>
-            Our environmental services combine advocacy, field work, and strategic
-            partnerships to support sustainable ecosystems.
-          </p>
-        </div>
-        <div className="row g-4">
-          {services.map((service) => (
-            <div className="col-md-6 col-xl-3" key={service.title}>
-              <div className="card service-card h-100 border-0 shadow-sm rounded-4 p-4">
-                <div className="icon-box bg-brand text-white mb-3">
-                  <i className={`bi ${service.icon} fs-3`}></i>
+const Services = () => {
+    const services = [
+        {
+            id: 1,
+            title: "Waste Collection",
+            description: "Efficient door-to-door garbage collection ensuring cleanliness across all zones.",
+            image: "/img/service-1.jpg"
+        },
+        {
+            id: 2,
+            title: "Recycling Management",
+            description: "Smart segregation and recycling system for plastic, organic, and hazardous waste.",
+            image: "/img/service-2.jpg"
+        },
+        {
+            id: 3,
+            title: "Smart Monitoring",
+            description: "Real-time tracking of waste levels and worker activities using smart technology.",
+            image: "/img/service-3.jpg"
+        },
+        {
+            id: 4,
+            title: "Public Awareness",
+            description: "Educating citizens about proper waste disposal and environmental responsibility.",
+            image: "/img/service-4.jpg"
+        }
+    ];
+
+    return (
+        <div className="container-fluid service py-5">
+            <div className="container py-5">
+                <div className="text-center mx-auto mb-5" style={{ maxWidth: '600px' }}>
+                    <h5 className="fw-bold text-primary text-uppercase">Our Services</h5>
+                    <h1 className="display-5 mb-0">Smart Waste Management Solutions</h1>
                 </div>
-                <h5>{service.title}</h5>
-                <p className="text-secondary">{service.description}</p>
-              </div>
+                <div className="row g-4">
+                    {services.map((service) => (
+                        <div className="col-md-6 col-lg-3" key={service.id}>
+                            <div className="service-item bg-light rounded h-100 shadow-sm overflow-hidden">
+                                <div className="service-img">
+                                    <img src={service.image} className="img-fluid w-100" alt={service.title} />
+                                </div>
+                                <div className="service-content text-center p-4">
+                                    <h5 className="mb-3">{service.title}</h5>
+                                    <p className="mb-0">{service.description}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
-          ))}
         </div>
-      </div>
-    </section>
-  )
-}
+    );
+};
 
-export default Services
+export default Services;
