@@ -23,6 +23,18 @@ const complaintSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    state: {
+        type: String,
+        default: "Himachal Pradesh"
+    },
+    district: {
+        type: String,
+        default: ""
+    },
+    city: {
+        type: String,
+        default: ""
+    },
     area: {
         type: String,
         default: ""
@@ -31,15 +43,16 @@ const complaintSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    assignedMcId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null
+    },
     ward: {
         type: String,
         default: ""
     },
     zone: {
-        type: String,
-        default: ""
-    },
-    city: {
         type: String,
         default: ""
     },

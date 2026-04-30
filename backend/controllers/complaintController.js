@@ -1,16 +1,25 @@
 const Complaint = require("../models/complaintModel");
 const User = require("../models/userModel");
+const Area = require("../models/areaModel");
 const path = require("path");
 
 // POST /api/complaints — Create a new complaint
 exports.createComplaint = async (req, res) => {
     try {
-        const { type, category, description, area, location, ward, zone, city } = req.body;
+        const { type, category, description, district, city, area, location, ward, zone } = req.body;
 
-        // citizenId comes from auth middleware (JWT decoded)
+        // Find the area to get assigned MC
+        const areaDoc = await Area.findOne({ district, city, name: area, isDeleted: false });
+        
+        if (!areaDoc || !areaDoc.mcId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "No Municipal Corporation (MC) assigned to this area. Complaint cannot be filed." 
+            });
+        }
+
         const citizenId = req.user?.id;
         const citizenName = req.user?.name || "";
-
         const imageUrl = req.file ? `/uploads/${req.file.filename}` : "";
 
         const newComplaint = new Complaint({
@@ -19,11 +28,14 @@ exports.createComplaint = async (req, res) => {
             type: type || category || "Other",
             category: category || type || "Other",
             description,
+            state: "Himachal Pradesh",
+            district,
+            city,
             area,
             location,
             ward,
             zone,
-            city,
+            assignedMcId: areaDoc.mcId,
             imageUrl
         });
 
@@ -31,7 +43,7 @@ exports.createComplaint = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: "Complaint filed successfully.",
+            message: "Complaint filed and assigned to MC successfully.",
             complaint: newComplaint
         });
     } catch (err) {
@@ -50,17 +62,15 @@ exports.getAllComplaints = async (req, res) => {
             filter.citizenId = req.user.id;
         }
 
-        // MCs can only see complaints in their assigned city
+        // MCs can only see complaints assigned to them
         if (req.user?.role === "mc") {
-            // Find the MC user to get their city and zone
-            const mcUser = await User.findById(req.user.id);
-            if (mcUser) {
-                if (mcUser.city) filter.city = mcUser.city;
-                if (mcUser.zone) filter.zone = mcUser.zone;
-            }
+            filter.assignedMcId = req.user.id;
         }
 
-        const complaints = await Complaint.find(filter).sort({ createdAt: -1 });
+        const complaints = await Complaint.find(filter)
+            .populate("citizenId", "name phone")
+            .populate("assignedMcId", "name email")
+            .sort({ createdAt: -1 });
         res.status(200).json({ success: true, complaints });
     } catch (err) {
         console.error("GetAllComplaints Error:", err);

@@ -5,6 +5,14 @@ const areaSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    state: {
+        type: String,
+        default: "Himachal Pradesh"
+    },
+    district: {
+        type: String,
+        required: true
+    },
     city: {
         type: String,
         required: true
@@ -17,9 +25,18 @@ const areaSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    location: {
+    pincode: {
         type: String,
         required: true
+    },
+    coordinates: {
+        lat: { type: Number },
+        lng: { type: Number }
+    },
+    mcId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null
     },
     isDeleted: {
         type: Boolean,

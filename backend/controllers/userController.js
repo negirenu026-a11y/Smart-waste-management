@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const Area = require("../models/areaModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -21,7 +22,7 @@ const generateToken = (user) => {
 // POST /api/register
 exports.registerUser = async (req, res) => {
     try {
-        const { name, email, phone, password, userType, state, city, zone, ward, location } = req.body;
+        const { name, email, phone, password, userType, state, district, city, area, zone, ward, location } = req.body;
 
         // Prevent admin registration via API
         if (userType === "admin") {
@@ -49,14 +50,30 @@ exports.registerUser = async (req, res) => {
             phone,
             password: hashedPassword,
             userType,
-            state: state || "",
+            state: state || "Himachal Pradesh",
+            district: district || "",
             city: city || "",
+            area: area || "",
             zone: zone || "",
             ward: ward || "",
             location: location || ""
         });
 
         await newUser.save();
+
+        // If MC, link to area
+        if (userType === "mc") {
+            const areaDoc = await Area.findOne({ 
+                district: district, 
+                city: city, 
+                name: area,
+                isDeleted: false 
+            });
+            if (areaDoc) {
+                areaDoc.mcId = newUser._id;
+                await areaDoc.save();
+            }
+        }
 
         const token = generateToken(newUser);
 

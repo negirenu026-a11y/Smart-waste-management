@@ -28,7 +28,15 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    district: {
+        type: String,
+        default: ""
+    },
     city: {
+        type: String,
+        default: ""
+    },
+    area: {
         type: String,
         default: ""
     },
