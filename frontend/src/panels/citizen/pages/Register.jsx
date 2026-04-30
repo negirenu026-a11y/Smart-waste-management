@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { cities, zones } from '../../../utils/dashboardData';
+import { districts, HIMACHAL_DATA } from '../../../utils/dashboardData';
 import api from '../../../utils/api';
 import { useOutletContext } from 'react-router-dom';
 
@@ -9,7 +9,9 @@ const Register = () => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
+        district: '',
         city: '',
+        area: '',
         zone: '',
         ward: '',
         location: '',
@@ -21,7 +23,9 @@ const Register = () => {
             setFormData({
                 name: user.fullName || user.name || '',
                 email: user.email || '',
+                district: user.district || '',
                 city: user.city || '',
+                area: user.area || '',
                 zone: user.zone || '',
                 ward: user.ward || '',
                 location: user.location || '',
@@ -31,7 +35,12 @@ const Register = () => {
     }, [user]);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData(prev => {
+            const updated = { ...prev, [name]: value };
+            if (name === 'district') updated.city = '';
+            return updated;
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -40,13 +49,14 @@ const Register = () => {
             const res = await api.patch("/profile", formData);
             if (res.data.success) {
                 toast.success('Registration details updated successfully!');
-                // Update local storage to reflect changes in UI immediately
                 localStorage.setItem("wastewise-user", JSON.stringify(res.data.user));
             }
         } catch (err) {
             toast.error("Failed to update registration details.");
         }
     };
+
+    const filteredCities = formData.district ? HIMACHAL_DATA[formData.district] : [];
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -59,86 +69,41 @@ const Register = () => {
                 <form onSubmit={handleSubmit} className="row g-4">
                     <div className="col-md-6">
                         <label className="form-label fw-bold small text-uppercase">Full Name</label>
-                        <input 
-                            type="text" 
-                            name="name"
-                            className="form-control p-3 bg-light border-0" 
-                            placeholder="Enter your full name" 
-                            value={formData.name}
-                            onChange={handleChange}
-                            required
-                        />
+                        <input type="text" name="name" className="form-control p-3 bg-light border-0" placeholder="Enter your full name" value={formData.name} onChange={handleChange} required />
                     </div>
                     <div className="col-md-6">
                         <label className="form-label fw-bold small text-uppercase">Email Address (Read-only)</label>
-                        <input 
-                            type="email" 
-                            name="email"
-                            className="form-control p-3 bg-light border-0" 
-                            value={formData.email}
-                            readOnly
-                        />
+                        <input type="email" name="email" className="form-control p-3 bg-light border-0" value={formData.email} readOnly />
                     </div>
-                    <div className="col-md-6">
+                    <div className="col-md-4">
                         <label className="form-label fw-bold small text-uppercase">Phone Number</label>
-                        <input 
-                            type="text" 
-                            name="phone"
-                            className="form-control p-3 bg-light border-0" 
-                            placeholder="Phone number" 
-                            value={formData.phone}
-                            onChange={handleChange}
-                        />
+                        <input type="text" name="phone" className="form-control p-3 bg-light border-0" placeholder="Phone number" value={formData.phone} onChange={handleChange} />
                     </div>
-                    <div className="col-md-6">
+                    <div className="col-md-4">
+                        <label className="form-label fw-bold small text-uppercase">District</label>
+                        <select name="district" className="form-select p-3 bg-light border-0" value={formData.district} onChange={handleChange} required>
+                            <option value="">Select District</option>
+                            {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                    </div>
+                    <div className="col-md-4">
                         <label className="form-label fw-bold small text-uppercase">City</label>
-                        <select 
-                            name="city"
-                            className="form-select p-3 bg-light border-0" 
-                            value={formData.city}
-                            onChange={handleChange}
-                            required
-                        >
+                        <select name="city" className="form-select p-3 bg-light border-0" value={formData.city} onChange={handleChange} required disabled={!formData.district}>
                             <option value="">Select City</option>
-                            {cities.map(city => <option key={city} value={city}>{city}</option>)}
+                            {filteredCities.map(city => <option key={city} value={city}>{city}</option>)}
                         </select>
                     </div>
-                    <div className="col-md-6">
-                        <label className="form-label fw-bold small text-uppercase">Zone</label>
-                        <select 
-                            name="zone"
-                            className="form-select p-3 bg-light border-0" 
-                            value={formData.zone}
-                            onChange={handleChange}
-                            required
-                        >
-                            <option value="">Select Zone</option>
-                            {zones.map(zone => <option key={zone} value={zone}>{zone}</option>)}
-                        </select>
+                    <div className="col-md-4">
+                        <label className="form-label fw-bold small text-uppercase">Area Name</label>
+                        <input type="text" name="area" className="form-control p-3 bg-light border-0" placeholder="e.g. Mall Road" value={formData.area} onChange={handleChange} required />
                     </div>
-                    <div className="col-md-6">
+                    <div className="col-md-4">
                         <label className="form-label fw-bold small text-uppercase">Ward Number</label>
-                        <input 
-                            type="text" 
-                            name="ward"
-                            className="form-control p-3 bg-light border-0" 
-                            placeholder="e.g. Ward 12" 
-                            value={formData.ward}
-                            onChange={handleChange}
-                            required
-                        />
+                        <input type="text" name="ward" className="form-control p-3 bg-light border-0" placeholder="e.g. Ward 12" value={formData.ward} onChange={handleChange} required />
                     </div>
-                    <div className="col-12">
-                        <label className="form-label fw-bold small text-uppercase">Specific Location</label>
-                        <input 
-                            type="text" 
-                            name="location"
-                            className="form-control p-3 bg-light border-0" 
-                            placeholder="e.g. Near Community Center" 
-                            value={formData.location}
-                            onChange={handleChange}
-                            required
-                        />
+                    <div className="col-md-4">
+                        <label className="form-label fw-bold small text-uppercase">Zone</label>
+                        <input type="text" name="zone" className="form-control p-3 bg-light border-0" placeholder="e.g. North" value={formData.zone} onChange={handleChange} required />
                     </div>
                     <div className="col-12 mt-5 text-end">
                         <button type="submit" className="btn btn-primary px-5 py-3 shadow-sm fw-bold">

@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
+import { districts, HIMACHAL_DATA } from "../../../utils/dashboardData";
 
 const Managemc = () => {
     const [mcUsers, setMcUsers] = useState([]);
-    const [areas, setAreas] = useState([]);
+    const [allAreas, setAllAreas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [form, setForm] = useState({ 
         fullName: "", 
         email: "", 
         password: "", 
+        district: "",
         city: "", 
+        area: "",
         zone: "", 
         ward: "", 
         location: "" 
@@ -38,7 +41,7 @@ const Managemc = () => {
     const fetchAreas = async () => {
         try {
             const res = await api.get("/areas");
-            setAreas(res.data.areas || []);
+            setAllAreas(res.data.areas || []);
         } catch (err) {
             console.error("Error fetching areas:", err);
         }
@@ -46,13 +49,26 @@ const Managemc = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        if (name === 'city') {
-            setForm((prev) => ({ ...prev, city: value, zone: '', ward: '', location: '' }));
-        } else if (name === 'zone') {
-            setForm((prev) => ({ ...prev, zone: value, ward: '', location: '' }));
-        } else {
-            setForm((prev) => ({ ...prev, [name]: value }));
-        }
+        setForm((prev) => {
+            const updated = { ...prev, [name]: value };
+            if (name === 'district') {
+                updated.city = '';
+                updated.area = '';
+                updated.zone = '';
+                updated.ward = '';
+            } else if (name === 'city') {
+                updated.area = '';
+                updated.zone = '';
+                updated.ward = '';
+            } else if (name === 'area') {
+                const selectedArea = allAreas.find(a => a.name === value && a.city === prev.city);
+                if (selectedArea) {
+                    updated.zone = selectedArea.zone;
+                    updated.ward = selectedArea.ward;
+                }
+            }
+            return updated;
+        });
     };
 
     const handleAddMC = async (e) => {
@@ -66,7 +82,7 @@ const Managemc = () => {
             
             if (res.data.success) {
                 toast.success("Municipal Corporation added successfully!");
-                setForm({ fullName: "", email: "", password: "", city: "", zone: "", ward: "", location: "" });
+                resetForm();
                 fetchMCs();
             }
         } catch (err) {
@@ -84,8 +100,7 @@ const Managemc = () => {
             
             if (res.data.success) {
                 toast.success("MC account updated successfully!");
-                setEditingMc(null);
-                setForm({ fullName: "", email: "", password: "", city: "", zone: "", ward: "", location: "" });
+                resetForm();
                 fetchMCs();
             }
         } catch (err) {
@@ -96,10 +111,12 @@ const Managemc = () => {
     const startEdit = (mc) => {
         setEditingMc(mc);
         setForm({
-            fullName: mc.name || mc.fullName || "",
+            fullName: mc.name || "",
             email: mc.email || "",
             password: "",
+            district: mc.district || "",
             city: mc.city || "",
+            area: mc.area || "",
             zone: mc.zone || "",
             ward: mc.ward || "",
             location: mc.location || ""
@@ -107,23 +124,24 @@ const Managemc = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    const resetForm = () => {
+        setEditingMc(null);
+        setForm({ fullName: "", email: "", password: "", district: "", city: "", area: "", zone: "", ward: "", location: "" });
+    };
+
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure?")) return;
         try {
-            const res = await api.delete(`/users/${id}`);
-            if (res.data.success) {
-                toast.success("MC account deleted.");
-                fetchMCs();
-            }
+            await api.delete(`/users/${id}`);
+            toast.success("MC account deleted.");
+            fetchMCs();
         } catch (err) {
             toast.error("Failed to delete MC account.");
         }
     };
 
-    // Derive dropdown options from fetched areas
-    const availableCities = [...new Set(areas.map(a => a.city))];
-    const availableZones = [...new Set(areas.filter(a => a.city === form.city).map(a => a.zone))];
-    const availableWards = [...new Set(areas.filter(a => a.city === form.city && a.zone === form.zone).map(a => a.ward))];
+    const filteredCities = form.district ? HIMACHAL_DATA[form.district] : [];
+    const filteredAreas = allAreas.filter(a => a.city === form.city && a.district === form.district);
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -138,7 +156,7 @@ const Managemc = () => {
                     <div className="row g-3">
                         <div className="col-md-4">
                             <label className="form-label small fw-bold">Full Name</label>
-                            <input className="form-control" name="fullName" placeholder="e.g. North MC"
+                            <input className="form-control" name="fullName" placeholder="e.g. MC Dharamshala"
                                 value={form.fullName} onChange={handleChange} required />
                         </div>
                         <div className="col-md-4">
@@ -153,24 +171,24 @@ const Managemc = () => {
                         </div>
                         
                         <div className="col-md-3">
-                            <label className="form-label small fw-bold">Assigned City</label>
-                            <select className="form-select" name="city" value={form.city} onChange={handleChange} required>
+                            <label className="form-label small fw-bold">District</label>
+                            <select className="form-select" name="district" value={form.district} onChange={handleChange} required>
+                                <option value="">Select District</option>
+                                {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                            </select>
+                        </div>
+                        <div className="col-md-3">
+                            <label className="form-label small fw-bold">City</label>
+                            <select className="form-select" name="city" value={form.city} onChange={handleChange} required disabled={!form.district}>
                                 <option value="">Select City</option>
-                                {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
+                                {filteredCities.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
                         <div className="col-md-3">
-                            <label className="form-label small fw-bold">Assigned Zone</label>
-                            <select className="form-select" name="zone" value={form.zone} onChange={handleChange} required disabled={!form.city}>
-                                <option value="">Select Zone</option>
-                                {availableZones.map(z => <option key={z} value={z}>{z}</option>)}
-                            </select>
-                        </div>
-                        <div className="col-md-3">
-                            <label className="form-label small fw-bold">Primary Ward</label>
-                            <select className="form-select" name="ward" value={form.ward} onChange={handleChange} required disabled={!form.zone}>
-                                <option value="">Select Ward</option>
-                                {availableWards.map(w => <option key={w} value={w}>{w}</option>)}
+                            <label className="form-label small fw-bold">Assigned Area</label>
+                            <select className="form-select" name="area" value={form.area} onChange={handleChange} required disabled={!form.city}>
+                                <option value="">Select Area</option>
+                                {filteredAreas.map(a => <option key={a._id} value={a.name}>{a.name}</option>)}
                             </select>
                         </div>
                         <div className="col-md-3">
@@ -181,10 +199,7 @@ const Managemc = () => {
 
                         <div className="col-12 text-end gap-2 d-flex justify-content-end mt-4">
                             {editingMc && (
-                                <button className="btn btn-light px-4" type="button" onClick={() => {
-                                    setEditingMc(null);
-                                    setForm({ fullName: "", email: "", password: "", city: "", zone: "", ward: "", location: "" });
-                                }}>Cancel</button>
+                                <button className="btn btn-light px-4" type="button" onClick={resetForm}>Cancel</button>
                             )}
                             <button className="btn btn-primary px-4 fw-bold" type="submit">
                                 {editingMc ? "Update MC account" : "Register MC account"}
@@ -214,21 +229,21 @@ const Managemc = () => {
                             ) : (
                                 mcUsers.map((mc) => (
                                     <tr key={mc._id}>
-                                        <td className="ps-4">
-                                            <div className="fw-bold text-primary">{mc.name || mc.fullName}</div>
-                                            <small className="text-muted">{mc.email}</small>
-                                        </td>
-                                        <td>
-                                            <div className="d-flex flex-column">
-                                                <span className="fw-bold">{mc.city}</span>
-                                                <span className="small text-muted">{mc.zone} Zone</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <p className="mb-0"><strong>Ward:</strong> {mc.ward}</p>
-                                            <p className="mb-0 small text-muted">{mc.location}</p>
-                                        </td>
-                                        <td><span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Active</span></td>
+                                         <td className="ps-4">
+                                             <div className="fw-bold text-primary">{mc.name}</div>
+                                             <small className="text-muted">{mc.email}</small>
+                                         </td>
+                                         <td>
+                                             <div className="d-flex flex-column">
+                                                 <span className="fw-bold">{mc.district}</span>
+                                                 <span className="small text-muted">{mc.city} | {mc.area}</span>
+                                             </div>
+                                         </td>
+                                         <td>
+                                             <p className="mb-0"><strong>Ward:</strong> {mc.ward || "N/A"}</p>
+                                             <p className="mb-0 small text-muted">{mc.location}</p>
+                                         </td>
+                                         <td><span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Active</span></td>
                                         <td className="pe-4 text-end">
                                             <div className="d-flex gap-2 justify-content-end">
                                                 <button className="btn btn-sm btn-outline-primary" onClick={() => startEdit(mc)}>
