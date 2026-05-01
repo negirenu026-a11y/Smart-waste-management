@@ -8,14 +8,41 @@ const STATUS_COLORS = {
     Resolved: "#10b981",
 };
 
+const DUMMY_COMPLAINTS = [
+    {
+        _id: "dummy1",
+        citizenName: "Rahul Sharma",
+        category: "Plastic Waste",
+        description: "Large pile of plastic bottles near the park entrance.",
+        city: "Dalhousie",
+        zone: "North",
+        ward: "Ward 4",
+        location: "Near Gandhi Chowk",
+        status: "Pending",
+        createdAt: new Date().toISOString(),
+        imageUrl: ""
+    }
+];
+
+const DUMMY_WORKERS = [
+    { _id: "dw1", name: "Sunil Kumar", role: "Collector" },
+    { _id: "dw2", name: "Amit Thakur", role: "Driver" }
+];
+
 const ManageComplaints = () => {
     const [complaints, setComplaints] = useState([]);
+    const [workers, setWorkers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState("All");
     const [selectedComplaint, setSelectedComplaint] = useState(null);
+    const [isAssigning, setIsAssigning] = useState(false);
+    const [assignData, setAssignData] = useState({ workerId: "", deadline: "" });
+    const [proofFile, setProofFile] = useState(null);
+    const [note, setNote] = useState("");
 
     useEffect(() => {
         fetchComplaints();
+        fetchWorkers();
     }, []);
 
     const fetchComplaints = async () => {
@@ -31,22 +58,68 @@ const ManageComplaints = () => {
         }
     };
 
-    const updateStatus = async (id, status) => {
+    const fetchWorkers = async () => {
         try {
-            const res = await api.patch(`/complaints/${id}/status`, { status });
-            if (res.data.success) {
-                toast.success(`Status updated to ${status}`);
-                fetchComplaints();
-                if (selectedComplaint?._id === id) {
-                    setSelectedComplaint(prev => ({ ...prev, status }));
-                }
-            }
+            const res = await api.get("/workers");
+            setWorkers(res.data.workers || []);
         } catch (err) {
-            toast.error("Failed to update status.");
+            console.error("Error fetching workers:", err);
         }
     };
 
-    const filtered = filter === "All" ? complaints : (complaints || []).filter(c => c.status === filter);
+    const handleAssign = async () => {
+        if (!assignData.workerId || !assignData.deadline) {
+            toast.warning("Please select a worker and set a deadline.");
+            return;
+        }
+        const worker = displayWorkers.find(w => w._id === assignData.workerId);
+        try {
+            const res = await api.patch(`/complaints/${selectedComplaint._id}/status`, {
+                status: "In Process",
+                assignedWorker: worker.name,
+                assignedWorkerId: worker._id,
+                deadline: assignData.deadline
+            });
+            if (res.data.success) {
+                toast.success("Worker assigned successfully.");
+                fetchComplaints();
+                setSelectedComplaint(null);
+                setIsAssigning(false);
+            }
+        } catch (err) {
+            toast.error("Assignment failed.");
+        }
+    };
+
+    const handleResolve = async () => {
+        if (!proofFile || !note) {
+            toast.warning("Proof image and note are required for resolution.");
+            return;
+        }
+        const formData = new FormData();
+        formData.append("image", proofFile);
+        formData.append("status", "Resolved");
+        formData.append("completionNote", note);
+
+        try {
+            const res = await api.patch(`/complaints/${selectedComplaint._id}/status`, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+            if (res.data.success) {
+                toast.success("Complaint resolved successfully!");
+                fetchComplaints();
+                setSelectedComplaint(null);
+                setProofFile(null);
+                setNote("");
+            }
+        } catch (err) {
+            toast.error("Failed to resolve complaint.");
+        }
+    };
+
+    const displayData = complaints.length === 0 && !loading ? DUMMY_COMPLAINTS : complaints;
+    const displayWorkers = workers.length === 0 ? DUMMY_WORKERS : workers;
+    const filtered = filter === "All" ? displayData : (displayData || []).filter(c => c.status === filter);
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -117,20 +190,9 @@ const ManageComplaints = () => {
                                             </span>
                                         </td>
                                         <td className="text-end pe-4">
-                                            <div className="d-flex gap-2 justify-content-end align-items-center">
-                                                <button className="btn btn-sm btn-outline-info" onClick={() => setSelectedComplaint(c)}>
-                                                    <i className="fas fa-eye"></i>
-                                                </button>
-                                                <select 
-                                                    className="form-select form-select-sm w-auto" 
-                                                    value={c.status}
-                                                    onChange={(e) => updateStatus(c._id, e.target.value)}
-                                                >
-                                                    <option value="Pending">Pending</option>
-                                                    <option value="In Process">In Process</option>
-                                                    <option value="Resolved">Resolved</option>
-                                                </select>
-                                            </div>
+                                            <button className="btn btn-sm btn-outline-info" onClick={() => setSelectedComplaint(c)}>
+                                                <i className="fas fa-eye me-1"></i> View & Manage
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
@@ -140,18 +202,17 @@ const ManageComplaints = () => {
                 </div>
             </div>
 
-            {/* Complaint Detail Modal */}
             {selectedComplaint && (
                 <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
                     <div className="modal-dialog modal-lg modal-dialog-centered">
                         <div className="modal-content border-0 shadow">
                             <div className="modal-header bg-light">
-                                <h5 className="modal-title fw-bold">Complaint Detailed View</h5>
-                                <button type="button" className="btn-close" onClick={() => setSelectedComplaint(null)}></button>
+                                <h5 className="modal-title fw-bold">Manage Complaint</h5>
+                                <button type="button" className="btn-close" onClick={() => { setSelectedComplaint(null); setIsAssigning(false); }}></button>
                             </div>
                             <div className="modal-body p-4">
                                 <div className="row g-4">
-                                    <div className="col-md-6">
+                                    <div className="col-md-6 text-center">
                                         {selectedComplaint.imageUrl ? (
                                             <img src={`http://localhost:4000${selectedComplaint.imageUrl}`} alt="Issue" className="img-fluid rounded shadow-sm border" style={{ maxHeight: '400px', width: '100%', objectFit: 'contain', background: '#f8f9fa' }} />
                                         ) : (
@@ -171,25 +232,69 @@ const ManageComplaints = () => {
                                         
                                         <hr />
 
-                                        <div className="mb-4">
-                                            <label className="text-muted small fw-bold d-block text-uppercase mb-2">Issue Description</label>
-                                            <div className="p-3 bg-light rounded" style={{ minHeight: '100px' }}>
-                                                {selectedComplaint.description || "No detailed description provided."}
+                                        {selectedComplaint.status === "Pending" && !isAssigning && (
+                                            <div className="d-grid gap-2">
+                                                <button className="btn btn-primary" onClick={() => setIsAssigning(true)}>Assign Worker & Deadline</button>
                                             </div>
-                                        </div>
+                                        )}
 
-                                        <div className="row g-3">
+                                        {isAssigning && (
+                                            <div className="bg-light p-3 rounded mb-3 border">
+                                                <h6 className="fw-bold mb-3">Worker Assignment</h6>
+                                                <div className="mb-2">
+                                                    <label className="small fw-bold">Select Worker</label>
+                                                    <select className="form-select" value={assignData.workerId} onChange={(e) => setAssignData({ ...assignData, workerId: e.target.value })}>
+                                                        <option value="">Choose Worker...</option>
+                                                        {displayWorkers.map((w) => (<option key={w._id} value={w._id}>{w.name} ({w.role})</option>))}
+                                                    </select>
+                                                </div>
+                                                <div className="mb-3">
+                                                    <label className="small fw-bold">Set Deadline</label>
+                                                    <input type="date" className="form-control" value={assignData.deadline} onChange={(e) => setAssignData({ ...assignData, deadline: e.target.value })} />
+                                                </div>
+                                                <div className="d-flex gap-2">
+                                                    <button className="btn btn-sm btn-success flex-grow-1" onClick={handleAssign}>Confirm Assignment</button>
+                                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => setIsAssigning(false)}>Cancel</button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {selectedComplaint.status === "In Process" && (
+                                            <div className="bg-light p-3 rounded mb-3 border">
+                                                <h6 className="fw-bold mb-3 text-success"><i className="fas fa-check-circle me-2"></i>Mark as Resolved</h6>
+                                                <div className="mb-2">
+                                                    <label className="small fw-bold">Upload Proof Image</label>
+                                                    <input type="file" className="form-control" onChange={(e) => setProofFile(e.target.files[0])} />
+                                                </div>
+                                                <div className="mb-3">
+                                                    <label className="small fw-bold">Resolution Note</label>
+                                                    <textarea className="form-control" rows="2" placeholder="Explain what was done..." value={note} onChange={(e) => setNote(e.target.value)}></textarea>
+                                                </div>
+                                                <button className="btn btn-success w-100" onClick={handleResolve}>Submit Resolution</button>
+                                            </div>
+                                        )}
+
+                                        {selectedComplaint.status === "Resolved" && (
+                                            <div className="bg-success bg-opacity-10 p-3 rounded mb-3 border border-success">
+                                                <h6 className="fw-bold text-success mb-2">Resolution Details</h6>
+                                                <p className="small mb-1"><strong>Note:</strong> {selectedComplaint.completionNote || "Cleaned successfully."}</p>
+                                                {selectedComplaint.proofImage && (
+                                                    <div className="mt-2">
+                                                        <label className="small fw-bold d-block mb-1">Proof Image:</label>
+                                                        <img src={`http://localhost:4000${selectedComplaint.proofImage}`} alt="Proof" className="rounded" style={{ width: '100px', height: '100px', objectFit: 'cover' }} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="row g-3 mt-1">
                                             <div className="col-sm-6">
                                                 <label className="text-muted small fw-bold d-block text-uppercase">Reported By</label>
-                                                <p className="fw-bold mb-0">{selectedComplaint.citizenName}</p>
+                                                <p className="fw-bold mb-0">{selectedComplaint.citizenName || "Guest"}</p>
                                             </div>
                                             <div className="col-sm-6">
                                                 <label className="text-muted small fw-bold d-block text-uppercase">Ward / Zone</label>
                                                 <p className="mb-0">{selectedComplaint.ward} | {selectedComplaint.zone}</p>
-                                            </div>
-                                            <div className="col-sm-6">
-                                                <label className="text-muted small fw-bold d-block text-uppercase">City</label>
-                                                <p className="mb-0">{selectedComplaint.city}</p>
                                             </div>
                                             <div className="col-12">
                                                 <label className="text-muted small fw-bold d-block text-uppercase">Specific Location</label>
@@ -200,19 +305,7 @@ const ManageComplaints = () => {
                                 </div>
                             </div>
                             <div className="modal-footer bg-light border-0">
-                                <div className="d-flex w-100 justify-content-between align-items-center">
-                                    <div className="d-flex gap-3 align-items-center">
-                                        <label className="small fw-bold text-uppercase text-muted">Quick Action:</label>
-                                        <select 
-                                            className="form-select form-select-sm w-auto"
-                                            value={selectedComplaint.status || "Pending"}
-                                            onChange={(e) => updateStatus(selectedComplaint._id, e.target.value)}
-                                        >
-                                            {Object.keys(STATUS_COLORS).map(s => <option key={s}>{s}</option>)}
-                                        </select>
-                                    </div>
-                                    <button type="button" className="btn btn-secondary px-4" onClick={() => setSelectedComplaint(null)}>Close</button>
-                                </div>
+                                <button type="button" className="btn btn-secondary px-4" onClick={() => { setSelectedComplaint(null); setIsAssigning(false); }}>Close</button>
                             </div>
                         </div>
                     </div>

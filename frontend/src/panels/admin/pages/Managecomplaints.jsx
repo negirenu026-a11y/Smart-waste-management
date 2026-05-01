@@ -206,6 +206,16 @@ const Managecomplaints = () => {
                                             <p className="mb-1 small"><strong>Ward:</strong> {selectedComplaint.ward}</p>
                                             <p className="mb-0 small"><strong>Location:</strong> {selectedComplaint.location}</p>
                                         </div>
+
+                                        {selectedComplaint.status === "Resolved" && (
+                                            <div className="mt-3 p-3 border border-success rounded bg-success bg-opacity-10">
+                                                <h6 className="fw-bold text-success mb-2">Resolution Proof</h6>
+                                                <p className="small mb-2"><strong>Note:</strong> {selectedComplaint.completionNote || "Resolved by MC."}</p>
+                                                {selectedComplaint.proofImage && (
+                                                    <img src={`http://localhost:4000${selectedComplaint.proofImage}`} alt="Proof" className="img-fluid rounded border shadow-sm" style={{ maxHeight: '150px' }} />
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

@@ -131,6 +131,19 @@ const History = () => {
                                     <p className="mb-0">{selectedComplaint.location}, {selectedComplaint.ward}</p>
                                     <p className="small text-muted">{selectedComplaint.city}, {selectedComplaint.zone}</p>
                                 </div>
+
+                                {selectedComplaint.status === "Resolved" && (
+                                    <div className="mt-4 p-3 border border-success rounded bg-success bg-opacity-10">
+                                        <h6 className="fw-bold text-success mb-2"><i className="fas fa-check-circle me-2"></i>Issue Resolved</h6>
+                                        <p className="small mb-2"><strong>Message:</strong> {selectedComplaint.completionNote || "Your issue has been resolved."}</p>
+                                        {selectedComplaint.proofImage && (
+                                            <div className="text-center mt-2">
+                                                <label className="small fw-bold d-block text-muted text-start mb-1">Resolution Proof:</label>
+                                                <img src={`http://localhost:4000${selectedComplaint.proofImage}`} alt="Proof" className="img-fluid rounded border shadow-sm" style={{ maxHeight: '200px' }} />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <div className="modal-footer bg-light border-0">
                                 <button type="button" className="btn btn-secondary px-4" onClick={() => setSelectedComplaint(null)}>Close</button>

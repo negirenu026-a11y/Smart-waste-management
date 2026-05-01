@@ -1,4 +1,5 @@
-const Worker = require("../models/workerModel");
+const Worker = require("../models/mcDetails/workerModel");
+const Task = require("../models/mcDetails/taskModel");
 
 // Get all workers (Admin/MC)
 exports.getAllWorkers = async (req, res) => {

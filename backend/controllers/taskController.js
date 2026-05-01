@@ -1,4 +1,4 @@
-const Task = require("../models/taskModel");
+const Task = require("../models/mcDetails/taskModel");
 
 // Get all tasks (Admin/MC)
 exports.getAllTasks = async (req, res) => {
@@ -43,6 +43,17 @@ exports.updateTask = async (req, res) => {
             { new: true }
         );
         if (!task) return res.status(404).json({ success: false, message: "Task not found or archived." });
+
+        // If task is completed and has a complaintId, sync with complaint
+        if ((task.status === "Completed" || task.status === "Resolved") && task.complaintId) {
+            const Complaint = require("../models/mcDetails/complaintModel");
+            await Complaint.findByIdAndUpdate(task.complaintId, {
+                status: "Resolved",
+                proofImage: task.completionProof || task.workerPhoto,
+                completionNote: task.completionNote || "Task completed by worker."
+            });
+        }
+
         res.status(200).json({ success: true, task });
     } catch (err) {
         console.error("UpdateTask Error:", err);

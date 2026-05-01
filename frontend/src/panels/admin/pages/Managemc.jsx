@@ -28,9 +28,8 @@ const Managemc = () => {
     const fetchMCs = async () => {
         try {
             setLoading(true);
-            const res = await api.get("/users");
-            const mcs = res.data.users.filter(u => u.userType === 'mc');
-            setMcUsers(mcs);
+            const res = await api.get("/mcs");
+            setMcUsers(res.data.mcs || []);
         } catch (err) {
             toast.error("Failed to fetch Municipal Corporations.");
         } finally {
@@ -52,19 +51,18 @@ const Managemc = () => {
         setForm((prev) => {
             const updated = { ...prev, [name]: value };
             if (name === 'district') {
-                updated.city = '';
-                updated.area = '';
-                updated.zone = '';
-                updated.ward = '';
+                updated.city = ''; updated.area = ''; updated.zone = ''; updated.ward = '';
             } else if (name === 'city') {
-                updated.area = '';
-                updated.zone = '';
-                updated.ward = '';
+                updated.area = ''; updated.zone = ''; updated.ward = '';
             } else if (name === 'area') {
-                const selectedArea = allAreas.find(a => a.name === value && a.city === prev.city);
-                if (selectedArea) {
-                    updated.zone = selectedArea.zone;
-                    updated.ward = selectedArea.ward;
+                // If area selection is now city-based as per Task 4/5
+                updated.city = value;
+                // Find district from HIMACHAL_DATA
+                for (const dist in HIMACHAL_DATA) {
+                    if (HIMACHAL_DATA[dist].includes(value)) {
+                        updated.district = dist;
+                        break;
+                    }
                 }
             }
             return updated;
@@ -74,37 +72,28 @@ const Managemc = () => {
     const handleAddMC = async (e) => {
         e.preventDefault();
         try {
-            const res = await api.post("/register", {
-                ...form,
-                name: form.fullName,
-                userType: "mc"
-            });
-            
+            const res = await api.post("/mcs", { ...form, name: form.fullName });
             if (res.data.success) {
                 toast.success("Municipal Corporation added successfully!");
                 resetForm();
                 fetchMCs();
             }
         } catch (err) {
-            toast.error(err.response?.data?.message || "Failed to add MC account.");
+            toast.error(err.response?.data?.message || "Failed to add MC record.");
         }
     };
 
     const handleUpdateMC = async (e) => {
         e.preventDefault();
         try {
-            const res = await api.patch(`/users/${editingMc._id}`, {
-                ...form,
-                name: form.fullName
-            });
-            
+            const res = await api.patch(`/mcs/${editingMc._id}`, { ...form, name: form.fullName });
             if (res.data.success) {
-                toast.success("MC account updated successfully!");
+                toast.success("MC record updated successfully!");
                 resetForm();
                 fetchMCs();
             }
         } catch (err) {
-            toast.error(err.response?.data?.message || "Failed to update MC account.");
+            toast.error(err.response?.data?.message || "Failed to update MC record.");
         }
     };
 
@@ -132,11 +121,11 @@ const Managemc = () => {
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure?")) return;
         try {
-            await api.delete(`/users/${id}`);
-            toast.success("MC account deleted.");
+            await api.delete(`/mcs/${id}`);
+            toast.success("MC record deleted.");
             fetchMCs();
         } catch (err) {
-            toast.error("Failed to delete MC account.");
+            toast.error("Failed to delete MC record.");
         }
     };
 
@@ -184,17 +173,19 @@ const Managemc = () => {
                                 {filteredCities.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
-                        <div className="col-md-3">
-                            <label className="form-label small fw-bold">Assigned Area</label>
-                            <select className="form-select" name="area" value={form.area} onChange={handleChange} required disabled={!form.city}>
-                                <option value="">Select Area</option>
-                                {filteredAreas.map(a => <option key={a._id} value={a.name}>{a.name}</option>)}
+                        {/* <div className="col-md-3">
+                            <label className="form-label small fw-bold">Assigned Area (City)</label>
+                            <select className="form-select" name="area" value={form.area} onChange={handleChange} required>
+                                <option value="">Select City</option>
+                                {[...new Set(allAreas.map(a => a.city))].sort().map(city => (
+                                    <option key={city} value={city}>{city}</option>
+                                ))}
                             </select>
-                        </div>
+                        </div> */}
                         <div className="col-md-3">
-                            <label className="form-label small fw-bold">Office Location</label>
+                            <label className="form-label small fw-bold">Office Location (Optional)</label>
                             <input className="form-control" name="location" placeholder="e.g. Town Hall"
-                                value={form.location} onChange={handleChange} required />
+                                value={form.location} onChange={handleChange} />
                         </div>
 
                         <div className="col-12 text-end gap-2 d-flex justify-content-end mt-4">
@@ -236,7 +227,7 @@ const Managemc = () => {
                                          <td>
                                              <div className="d-flex flex-column">
                                                  <span className="fw-bold">{mc.district}</span>
-                                                 <span className="small text-muted">{mc.city} | {mc.area}</span>
+                                                 <span className="small text-muted">{mc.city} | {mc.zone || "Auto"}</span>
                                              </div>
                                          </td>
                                          <td>

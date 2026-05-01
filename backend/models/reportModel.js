@@ -6,19 +6,33 @@ const reportSchema = new mongoose.Schema({
         ref: "User",
         required: true
     },
+    title: {
+        type: String,
+        default: "Weekly Report"
+    },
+    description: {
+        type: String,
+        default: ""
+    },
     mcName: String,
     city: String,
+    district: String,
     zone: String,
-    stats: {
-        workers: Number,
-        tasks: Number,
-        complaints: Number,
-        resolvedTasks: Number,
-        resolvedComplaints: Number
+    tasksCompleted: {
+        type: Number,
+        default: 0
+    },
+    pendingTasks: {
+        type: Number,
+        default: 0
+    },
+    workersInvolved: {
+        type: Number,
+        default: 0
     },
     pdfUrl: {
         type: String,
-        required: true
+        required: false // Made optional for the new text-based reports
     },
     status: {
         type: String,

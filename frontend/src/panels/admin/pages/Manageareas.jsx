@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { districts, HIMACHAL_DATA, zones } from "../../../utils/dashboardData";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-import axios from "axios";
+import { districts, HIMACHAL_DATA } from "../../../utils/dashboardData";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
 // Fix for default marker icons in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-    iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-    iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
 const MapController = ({ center }) => {
@@ -28,15 +27,17 @@ const Manageareas = () => {
     const [loading, setLoading] = useState(true);
     const [form, setForm] = useState({ 
         name: "", 
-        district: "",
+        district: "", 
         city: "", 
         zone: "", 
         ward: "", 
-        pincode: ""
+        pincode: "",
+        location: "",
+        lat: 31.1048,
+        lng: 77.1734
     });
     const [editingArea, setEditingArea] = useState(null);
-    const [mapCenter, setMapCenter] = useState([31.1048, 77.1734]); // Shimla
-    const [previewCoords, setPreviewCoords] = useState(null);
+    const [mapCenter, setMapCenter] = useState([31.1048, 77.1734]);
 
     useEffect(() => {
         fetchAreas();
@@ -48,45 +49,45 @@ const Manageareas = () => {
             const res = await api.get("/areas");
             setAreas(res.data.areas || []);
         } catch (err) {
-            toast.error("Failed to fetch operational areas.");
+            toast.error("Failed to load operational areas.");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setForm((prev) => {
-            const updated = { ...prev, [name]: value };
-            if (name === "district") updated.city = ""; // Reset city if district changes
-            return updated;
-        });
-
-        if (name === "pincode" && value.length === 6) {
-            fetchCoordsFromPincode(value);
-        }
-    };
-
-    const fetchCoordsFromPincode = async (pin) => {
+    const handleGeocode = async (pin) => {
         try {
-            const res = await axios.get(`https://nominatim.openstreetmap.org/search?postalcode=${pin}&country=India&format=json`);
-            if (res.data && res.data.length > 0) {
-                const coords = [parseFloat(res.data[0].lat), parseFloat(res.data[0].lon)];
-                setPreviewCoords(coords);
-                setMapCenter(coords);
-                toast.info("Location fetched from pincode!");
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${pin}&country=India&format=json`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+                const { lat, lon } = data[0];
+                const nLat = parseFloat(lat);
+                const nLng = parseFloat(lon);
+                setForm(prev => ({ ...prev, lat: nLat, lng: nLng }));
+                setMapCenter([nLat, nLng]);
+                toast.success("Location detected via PIN Code");
             }
         } catch (err) {
-            console.error("Geocoding failed");
+            console.error("Geocoding error:", err);
         }
     };
 
-    const handleAdd = async (e) => {
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm((prev) => ({ ...prev, [name]: value }));
+
+        if (name === 'pincode' && value.length === 6) {
+            handleGeocode(value);
+        }
+    };
+
+    const handleAddArea = async (e) => {
         e.preventDefault();
         try {
-            const res = await api.post("/areas", form);
+            const payload = { ...form, coordinates: { lat: parseFloat(form.lat), lng: parseFloat(form.lng) } };
+            const res = await api.post("/areas", payload);
             if (res.data.success) {
-                toast.success("Area added successfully!");
+                toast.success("Area registered successfully!");
                 resetForm();
                 fetchAreas();
             }
@@ -95,187 +96,190 @@ const Manageareas = () => {
         }
     };
 
-    const handleUpdate = async (e) => {
+    const handleUpdateArea = async (e) => {
         e.preventDefault();
         try {
-            const res = await api.patch(`/areas/${editingArea._id}`, form);
+            const payload = { ...form, coordinates: { lat: parseFloat(form.lat), lng: parseFloat(form.lng) } };
+            const res = await api.patch(`/areas/${editingArea._id}`, payload);
             if (res.data.success) {
                 toast.success("Area updated successfully!");
                 resetForm();
                 fetchAreas();
             }
         } catch (err) {
-            toast.error("Failed to update area.");
+            toast.error(err.response?.data?.message || "Failed to update area.");
         }
     };
 
     const startEdit = (area) => {
         setEditingArea(area);
+        const lat = area.coordinates?.lat || 31.1048;
+        const lng = area.coordinates?.lng || 77.1734;
         setForm({
             name: area.name,
             district: area.district,
             city: area.city,
             zone: area.zone,
             ward: area.ward,
-            pincode: area.pincode
+            pincode: area.pincode || "",
+            location: area.location || "",
+            lat: lat,
+            lng: lng
         });
-        if (area.coordinates) {
-            setMapCenter([area.coordinates.lat, area.coordinates.lng]);
-            setPreviewCoords([area.coordinates.lat, area.coordinates.lng]);
-        }
+        setMapCenter([lat, lng]);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    const resetForm = () => {
+        setEditingArea(null);
+        setForm({ name: "", district: "", city: "", zone: "", ward: "", pincode: "", location: "", lat: 31.1048, lng: 77.1734 });
+        setMapCenter([31.1048, 77.1734]);
+    };
+
     const handleDelete = async (id) => {
-        if (!window.confirm("Delete this area?")) return;
+        if (!window.confirm("Are you sure?")) return;
         try {
             await api.delete(`/areas/${id}`);
-            toast.success("Area deleted.");
+            toast.success("Area deleted successfully.");
             fetchAreas();
         } catch (err) {
             toast.error("Failed to delete area.");
         }
     };
 
-    const resetForm = () => {
-        setForm({ name: "", district: "", city: "", zone: "", ward: "", pincode: "" });
-        setEditingArea(null);
-        setPreviewCoords(null);
-    };
+    const filteredCities = form.district ? HIMACHAL_DATA[form.district] : [];
 
     return (
         <div className="dashboard-section-wrap p-4">
             <header className="mb-4">
                 <h2 className="fw-bold">Manage Operational Areas</h2>
-                <p className="text-muted">Himachal Pradesh Smart Waste Management - Area & MC Mapping</p>
+                <p className="text-muted">Define jurisdictions and geographic zones for MC assignments.</p>
             </header>
 
+            <div className="dashboard-card p-4 mb-4 shadow-sm border-0 bg-white">
+                <h5 className="fw-bold mb-4">{editingArea ? "Edit Area Details" : "Register New Area"}</h5>
+                <form onSubmit={editingArea ? handleUpdateArea : handleAddArea}>
+                    <div className="row g-3">
+                        <div className="col-md-4">
+                            <label className="form-label small fw-bold">Area Name</label>
+                            <input className="form-control" name="name" placeholder="e.g. Lower Bazar"
+                                value={form.name} onChange={handleChange} required />
+                        </div>
+                        <div className="col-md-4">
+                            <label className="form-label small fw-bold">District</label>
+                            <select className="form-select" name="district" value={form.district} onChange={handleChange} required>
+                                <option value="">Select District</option>
+                                {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                            </select>
+                        </div>
+                        <div className="col-md-4">
+                            <label className="form-label small fw-bold">City</label>
+                            <select className="form-select" name="city" value={form.city} onChange={handleChange} required disabled={!form.district}>
+                                <option value="">Select City</option>
+                                {filteredCities.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+                        <div className="col-md-4">
+                            <label className="form-label small fw-bold">Zone</label>
+                            <select className="form-select" name="zone" value={form.zone} onChange={handleChange} required>
+                                <option value="">Select Zone</option>
+                                <option value="North">North</option>
+                                <option value="South">South</option>
+                                <option value="East">East</option>
+                                <option value="West">West</option>
+                            </select>
+                        </div>
+                        <div className="col-md-4">
+                            <label className="form-label small fw-bold">Ward No.</label>
+                            <input className="form-control" name="ward" placeholder="e.g. Ward 12"
+                                value={form.ward} onChange={handleChange} required />
+                        </div>
+                        <div className="col-md-4">
+                            <label className="form-label small fw-bold">PIN Code (Auto-detects location)</label>
+                            <input className="form-control" name="pincode" placeholder="e.g. 171001"
+                                value={form.pincode} onChange={handleChange} required />
+                        </div>
+                        <div className="col-md-12">
+                            <label className="form-label small fw-bold">Description / Landmarks</label>
+                            <input className="form-control" name="location" placeholder="e.g. Near Mall Road"
+                                value={form.location} onChange={handleChange} />
+                        </div>
+
+                        <div className="col-12 text-end gap-2 d-flex justify-content-end mt-4">
+                            {editingArea && (
+                                <button className="btn btn-light px-4" type="button" onClick={resetForm}>Cancel</button>
+                            )}
+                            <button className="btn btn-primary px-4 fw-bold" type="submit">
+                                {editingArea ? "Update Area" : "Register Area"}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
             <div className="row g-4">
-                <div className="col-lg-5">
-                    <div className="dashboard-card p-4 shadow-sm border-0 bg-white">
-                        <h5 className="fw-bold mb-4">{editingArea ? "Edit Service Area" : "Add New Area"}</h5>
-                        <form onSubmit={editingArea ? handleUpdate : handleAdd}>
-                            <div className="row g-3">
-                                <div className="col-12">
-                                    <label className="form-label small fw-bold">Area Name</label>
-                                    <input className="form-control" name="name" placeholder="e.g. Lower Bazar"
-                                        value={form.name} onChange={handleChange} required />
-                                </div>
-                                <div className="col-md-6">
-                                    <label className="form-label small fw-bold">District</label>
-                                    <select className="form-select" name="district" value={form.district} onChange={handleChange} required>
-                                        <option value="">Select District</option>
-                                        {districts.map(d => <option key={d} value={d}>{d}</option>)}
-                                    </select>
-                                </div>
-                                <div className="col-md-6">
-                                    <label className="form-label small fw-bold">City</label>
-                                    <select className="form-select" name="city" value={form.city} onChange={handleChange} required disabled={!form.district}>
-                                        <option value="">Select City</option>
-                                        {form.district && HIMACHAL_DATA[form.district].map(c => <option key={c} value={c}>{c}</option>)}
-                                    </select>
-                                </div>
-                                <div className="col-md-6">
-                                    <label className="form-label small fw-bold">Zone</label>
-                                    <select className="form-select" name="zone" value={form.zone} onChange={handleChange} required>
-                                        <option value="">Select Zone</option>
-                                        {zones.map(z => <option key={z} value={z}>{z}</option>)}
-                                    </select>
-                                </div>
-                                <div className="col-md-6">
-                                    <label className="form-label small fw-bold">Ward</label>
-                                    <input className="form-control" name="ward" placeholder="e.g. Ward 1"
-                                        value={form.ward} onChange={handleChange} required />
-                                </div>
-                                <div className="col-12">
-                                    <label className="form-label small fw-bold">Pincode</label>
-                                    <input className="form-control" name="pincode" placeholder="6-digit pincode" maxLength="6"
-                                        value={form.pincode} onChange={handleChange} required />
-                                </div>
-                                <div className="col-12 text-end d-flex gap-2 justify-content-end mt-4">
-                                    <button className="btn btn-light px-4" type="button" onClick={resetForm}>Cancel</button>
-                                    <button className="btn btn-primary px-4" type="submit">
-                                        {editingArea ? "Update Area" : "Add Area"}
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
+                <div className="col-lg-7">
+                    <div className="dashboard-card p-0 overflow-hidden shadow-sm border-0 bg-white">
+                        <div className="table-responsive">
+                            <table className="table table-hover align-middle mb-0">
+                                <thead className="table-light">
+                                    <tr>
+                                        <th className="ps-4">Area Name</th>
+                                        <th>Jurisdiction</th>
+                                        <th>Zone & Ward</th>
+                                        <th className="pe-4 text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {loading ? (
+                                        <tr><td colSpan={4} className="text-center py-5">Loading operational areas...</td></tr>
+                                    ) : areas.length === 0 ? (
+                                        <tr><td colSpan={4} className="text-center text-muted py-5">No areas found.</td></tr>
+                                    ) : (
+                                        areas.map((a) => (
+                                            <tr key={a._id}>
+                                                 <td className="ps-4">
+                                                     <div className="fw-bold text-primary">{a.name}</div>
+                                                     <small className="text-muted">{a.location || "No landmarks"}</small>
+                                                 </td>
+                                                 <td>
+                                                     <span className="fw-bold">{a.district}</span>
+                                                     <span className="text-muted small ms-2">({a.city})</span>
+                                                 </td>
+                                                 <td>
+                                                     <div className="d-flex flex-column">
+                                                         <span className="badge bg-info bg-opacity-10 text-info mb-1" style={{width: 'fit-content'}}>{a.zone}</span>
+                                                         <span className="small text-muted">{a.ward}</span>
+                                                     </div>
+                                                 </td>
+                                                <td className="pe-4 text-end">
+                                                    <div className="d-flex gap-2 justify-content-end">
+                                                        <button className="btn btn-sm btn-outline-primary" onClick={() => startEdit(a)}>
+                                                            <i className="fas fa-edit"></i>
+                                                        </button>
+                                                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(a._id)}>
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-
-                <div className="col-lg-7">
-                    <div className="dashboard-card p-0 shadow-sm border-0 bg-white overflow-hidden" style={{ height: '500px' }}>
+                <div className="col-lg-5">
+                    <div className="dashboard-card p-0 overflow-hidden shadow-sm border-0 bg-white" style={{ height: '400px' }}>
                         <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
                             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                             <MapController center={mapCenter} />
-                            
-                            {previewCoords && (
-                                <Marker position={previewCoords}>
-                                    <Popup>Preview Location</Popup>
-                                </Marker>
-                            )}
-
-                            {areas.map(area => (
-                                area.coordinates && (
-                                    <Marker key={area._id} position={[area.coordinates.lat, area.coordinates.lng]}>
-                                        <Popup>
-                                            <div className="p-1">
-                                                <h6 className="fw-bold mb-1">{area.name}</h6>
-                                                <p className="mb-0 small">{area.city}, {area.district}</p>
-                                                <p className="mb-0 small text-primary">MC: {area.mcId ? area.mcId.name : "Unassigned"}</p>
-                                            </div>
-                                        </Popup>
-                                    </Marker>
-                                )
-                            ))}
+                            <Marker position={mapCenter}>
+                                <Popup>{form.name || "Selected Location"}</Popup>
+                            </Marker>
                         </MapContainer>
                     </div>
-                </div>
-            </div>
-
-            <div className="dashboard-card p-0 overflow-hidden shadow-sm border-0 bg-white mt-4">
-                <div className="table-responsive">
-                    <table className="table table-hover align-middle mb-0">
-                        <thead className="table-light">
-                            <tr>
-                                <th className="ps-4">Area Name</th>
-                                <th>District / City</th>
-                                <th>Zone / Ward / Pin</th>
-                                <th>Assigned MC</th>
-                                <th className="pe-4 text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr><td colSpan={5} className="text-center py-5">Loading areas...</td></tr>
-                            ) : (
-                                areas.map((area) => (
-                                    <tr key={area._id}>
-                                        <td className="ps-4 fw-bold">{area.name}</td>
-                                        <td>{area.district} - {area.city}</td>
-                                        <td>{area.zone} | {area.ward} | {area.pincode}</td>
-                                        <td>
-                                            {area.mcId ? (
-                                                <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
-                                                    {area.mcId.name}
-                                                </span>
-                                            ) : (
-                                                <span className="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">
-                                                    Unassigned
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="pe-4 text-end">
-                                            <div className="d-flex gap-2 justify-content-end">
-                                                <button className="btn btn-sm btn-outline-primary" onClick={() => startEdit(area)}><i className="fas fa-edit"></i></button>
-                                                <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(area._id)}><i className="fas fa-trash"></i></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>

@@ -51,6 +51,8 @@ const uploadPDF = multer({
 router.post("/register", userController.registerUser);
 router.post("/login", userController.loginUser);
 router.post("/logout", userController.logoutUser);
+router.post("/forgot-password", userController.forgotPassword);
+router.post("/reset-password", userController.resetPassword);
 
 // ── User Management Routes (Admin only) ────────────────────────────────────
 router.get("/users", authMiddleware, requireRole("admin"), userController.getAllUsers);
@@ -84,7 +86,10 @@ router.delete("/tasks/:id", authMiddleware, requireRole("mc", "admin"), taskCont
 
 // ── Report Routes ──────────────────────────────────────────────────────────
 router.get("/reports", authMiddleware, reportController.getAllReports);
-router.post("/reports", authMiddleware, requireRole("mc"), uploadPDF.single("report"), reportController.submitReport);
+router.get("/reports/mc/:mcId", authMiddleware, reportController.getReportsByMC);
+router.post("/reports", authMiddleware, requireRole("mc"), reportController.createReport);
+router.patch("/reports/:id", authMiddleware, requireRole("mc"), reportController.updateReport);
+router.delete("/reports/:id", authMiddleware, requireRole("mc", "admin"), reportController.deleteReport);
 router.patch("/reports/:id/respond", authMiddleware, requireRole("admin"), reportController.respondToReport);
 
 // ── Feedback Routes

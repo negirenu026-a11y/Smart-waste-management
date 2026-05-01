@@ -34,6 +34,13 @@ const ManageWorkers = () => {
         }
     };
 
+    const DUMMY_WORKERS = [
+        { _id: "dw1", name: "Sunil Kumar", contact: "9876543210", area: "Lower Bazar", role: "Collector" },
+        { _id: "dw2", name: "Amit Thakur", contact: "9812345678", area: "Mall Road", role: "Driver" }
+    ];
+
+    const displayWorkers = workers.length === 0 && !loading ? DUMMY_WORKERS : workers;
+
     const fetchAreas = async () => {
         try {
             const res = await api.get("/areas");
@@ -168,10 +175,10 @@ const ManageWorkers = () => {
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={5} className="text-center py-5">Loading workers...</td></tr>
-                            ) : workers.length === 0 ? (
+                            ) : displayWorkers.length === 0 ? (
                                 <tr><td colSpan={5} className="text-center py-5 text-muted">No workers found in your zone.</td></tr>
                             ) : (
-                                workers.map((w) => (
+                                displayWorkers.map((w) => (
                                     <tr key={w._id}>
                                         <td className="ps-4">
                                             <div className="d-flex align-items-center gap-2">

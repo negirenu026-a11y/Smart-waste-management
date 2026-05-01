@@ -1,8 +1,9 @@
 const User = require("../models/userModel");
-const Complaint = require("../models/complaintModel");
-const Worker = require("../models/workerModel");
-const Task = require("../models/taskModel");
+const Complaint = require("../models/mcDetails/complaintModel");
+const Worker = require("../models/mcDetails/workerModel");
+const Task = require("../models/mcDetails/taskModel");
 const Area = require("../models/areaModel");
+const seedMCs = require("../seed/mcSeeder");
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");

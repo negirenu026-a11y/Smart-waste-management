@@ -8,7 +8,7 @@ function Navigation() {
     <header className="site-header">
       {/* 1. TOP GREEN BAR */}
       <div className="top-bar bg-success text-white py-2">
-        <div className="container d-flex justify-content-between align-items-center">
+        <div className="container-fluid px-3 d-flex justify-content-between align-items-center">
           <div className="top-header-left small text-truncate">
             <i className="bi bi-envelope me-2"></i> support@wastewise.com
             <span className="mx-3 d-none d-md-inline">|</span>
@@ -23,11 +23,11 @@ function Navigation() {
       </div>
 
       {/* 2. WHITE HEADER BOX WRAPPER */}
-      <div className="main-header-wrapper">
-        <div className="container">
-          <div className="header-box bg-white shadow-sm rounded-3">
+      <div className="main-header-wrapper bg-white">
+        <div className="container-fluid px-0">
+          <div className="header-box bg-white shadow-sm">
             <nav className="navbar navbar-expand-lg navbar-light py-0">
-              <div className="container-fluid px-0 d-flex align-items-center justify-content-between">
+              <div className="container-fluid px-3 py-2 d-flex align-items-center justify-content-between">
                 <NavLink className="navbar-brand fw-bold text-brand fs-3 py-0" to="/">
                   Environs
                 </NavLink>
@@ -47,50 +47,50 @@ function Navigation() {
                 <div className="collapse navbar-collapse" id="navMenu">
                   <ul className="navbar-nav ms-auto align-items-center">
                     <li className="nav-item px-2">
-                      <NavLink 
-                        to="/" 
-                        end 
+                      <NavLink
+                        to="/"
+                        end
                         className={({ isActive }) => `nav-link fw-semibold ${isActive ? 'text-primary' : 'text-dark'}`}
                       >
                         Home
                       </NavLink>
                     </li>
                     <li className="nav-item px-2">
-                      <NavLink 
-                        to="/about" 
+                      <NavLink
+                        to="/about"
                         className={({ isActive }) => `nav-link fw-semibold ${isActive ? 'text-primary' : 'text-dark'}`}
                       >
                         About
                       </NavLink>
                     </li>
                     <li className="nav-item px-2">
-                      <NavLink 
-                        to="/services" 
+                      <NavLink
+                        to="/services"
                         className={({ isActive }) => `nav-link fw-semibold ${isActive ? 'text-primary' : 'text-dark'}`}
                       >
                         Services
                       </NavLink>
                     </li>
                     <li className="nav-item px-2">
-                      <NavLink 
-                        to="/causes" 
+                      <NavLink
+                        to="/causes"
                         className={({ isActive }) => `nav-link fw-semibold ${isActive ? 'text-primary' : 'text-dark'}`}
                       >
                         Causes
                       </NavLink>
                     </li>
-                    
+
                     {/* Dropdown Pages */}
-                    <li 
+                    <li
                       className="nav-item dropdown px-2"
                       onMouseEnter={() => setShowDropdown(true)}
                       onMouseLeave={() => setShowDropdown(false)}
                     >
-                      <a 
-                        className={`nav-link dropdown-toggle fw-semibold text-dark ${showDropdown ? 'show' : ''}`} 
-                        href="#" 
-                        role="button" 
-                        data-bs-toggle="dropdown" 
+                      <a
+                        className={`nav-link dropdown-toggle fw-semibold text-dark ${showDropdown ? 'show' : ''}`}
+                        href="#"
+                        role="button"
+                        data-bs-toggle="dropdown"
                         aria-expanded={showDropdown}
                       >
                         Pages
@@ -104,23 +104,23 @@ function Navigation() {
                     </li>
 
                     <li className="nav-item px-2">
-                      <NavLink 
-                        to="/blog" 
+                      <NavLink
+                        to="/blog"
                         className={({ isActive }) => `nav-link fw-semibold ${isActive ? 'text-primary' : 'text-dark'}`}
                       >
                         Blog
                       </NavLink>
                     </li>
                     <li className="nav-item px-2">
-                      <NavLink 
-                        to="/contact" 
+                      <NavLink
+                        to="/contact"
                         className={({ isActive }) => `nav-link fw-semibold ${isActive ? 'text-primary' : 'text-dark'}`}
                       >
                         Contact
                       </NavLink>
                     </li>
                   </ul>
-                  
+
                   <div className="ms-lg-4 mt-3 mt-lg-0">
                     <NavLink to="/auth" className="btn btn-primary px-5 fw-bold rounded-pill shadow-sm py-2">
                       Login

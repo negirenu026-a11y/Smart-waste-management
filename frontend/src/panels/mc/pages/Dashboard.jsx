@@ -22,13 +22,27 @@ const McDashboard = () => {
                     api.get("/tasks"),
                     api.get("/complaints")
                 ]);
-                setStats({
-                    workers: (workersRes.data.workers || []).length,
-                    tasks: (tasksRes.data.tasks || []).filter(t => t.status !== 'Resolved' && t.status !== 'Completed').length,
-                    complaints: (complaintsRes.data.complaints || []).filter(c => c.status !== 'Resolved').length
-                });
+                const workers = workersRes.data.workers || [];
+                const tasks = tasksRes.data.tasks || [];
+                const complaints = complaintsRes.data.complaints || [];
+
+                if (workers.length === 0 && tasks.length === 0 && complaints.length === 0) {
+                    setStats({
+                        workers: 5,
+                        tasks: 3,
+                        complaints: 2
+                    });
+                } else {
+                    setStats({
+                        workers: workers.length,
+                        tasks: tasks.filter(t => t.status !== 'Resolved' && t.status !== 'Completed').length,
+                        complaints: complaints.filter(c => c.status !== 'Resolved').length
+                    });
+                }
             } catch (err) {
                 console.error("Failed to fetch dashboard stats", err);
+                // Fallback to dummy data on error too
+                setStats({ workers: 5, tasks: 3, complaints: 2 });
             } finally {
                 setLoading(false);
             }

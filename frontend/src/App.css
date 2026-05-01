@@ -23,7 +23,6 @@
   top: 45px;
   width: 100%;
   z-index: 999;
-  padding-top: 15px; /* Slight margin from top bar as requested */
 }
 
 .header-box {

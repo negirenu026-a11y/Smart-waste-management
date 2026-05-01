@@ -97,6 +97,9 @@ export default function Auth() {
 
     const [loginData, setLoginData] = useState({ username: "", password: "" });
 
+    const [forgotMode, setForgotMode] = useState(null); // null, 'request', 'otp', 'reset'
+    const [forgotData, setForgotData] = useState({ role: 'citizen', identifier: '', otp: '', newPassword: '' });
+
     const availableCities =
         formData.country === "India" && formData.state
             ? indiaStateCityMap[formData.state] || []
@@ -115,6 +118,61 @@ export default function Auth() {
     const handleLoginChange = (e) => {
         setError("");
         setLoginData((cur) => ({ ...cur, [e.target.name]: e.target.value }));
+    };
+
+    const handleForgotChange = (e) => {
+        const { name, value } = e.target;
+        setForgotData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleRequestOTP = async (e) => {
+        e.preventDefault();
+        if (!forgotData.identifier) return toast.error("Please enter email or phone");
+        setLoading(true);
+        try {
+            const res = await api.post("/forgot-password", {
+                identifier: forgotData.identifier,
+                role: forgotData.role
+            });
+            if (res.data.success) {
+                setForgotMode('otp');
+                toast.success(res.data.message);
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Error sending OTP");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = (e) => {
+        e.preventDefault();
+        if (forgotData.otp.length < 6) return toast.error("OTP must be 6 digits");
+        setForgotMode('reset');
+        toast.success("OTP entered. Please set your new password.");
+    };
+
+    const handleResetPassword = async (e) => {
+        e.preventDefault();
+        if (forgotData.newPassword.length < 6) return toast.error("Password too short");
+        setLoading(true);
+        try {
+            const res = await api.post("/reset-password", {
+                identifier: forgotData.identifier,
+                role: forgotData.role,
+                otp: forgotData.otp,
+                newPassword: forgotData.newPassword
+            });
+            if (res.data.success) {
+                toast.success("Password reset successful!");
+                setForgotMode(null);
+                setAuthMode("login");
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Reset failed");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -169,10 +227,10 @@ export default function Auth() {
                 <div className="auth-card auth-card--centered mx-auto">
 
                     <div className="auth-switch">
-                        <button type="button" className={authMode === "register" ? "is-active" : ""} onClick={() => { setAuthMode("register"); setError(""); }}>
+                        <button type="button" className={authMode === "register" && !forgotMode ? "is-active" : ""} onClick={() => { setAuthMode("register"); setForgotMode(null); setError(""); }}>
                             Register Now
                         </button>
-                        <button type="button" className={authMode === "login" ? "is-active" : ""} onClick={() => { setAuthMode("login"); setError(""); }}>
+                        <button type="button" className={authMode === "login" || forgotMode ? "is-active" : ""} onClick={() => { setAuthMode("login"); setForgotMode(null); setError(""); }}>
                             Log In
                         </button>
                     </div>
@@ -181,7 +239,69 @@ export default function Auth() {
                         <div className="alert alert-danger py-2 mb-3 small">{error}</div>
                     )}
 
-                    {authMode === "register" ? (
+                    {forgotMode ? (
+                        <div className="auth-form">
+                            <h3>Reset Password</h3>
+                            
+                            {forgotMode === 'request' && (
+                                <form onSubmit={handleRequestOTP}>
+                                    <p className="text-muted small mb-3">Select your role and enter email/phone to receive OTP.</p>
+                                    <select name="role" value={forgotData.role} onChange={handleForgotChange} className="mb-3">
+                                        <option value="citizen">Citizen</option>
+                                        <option value="mc">Municipal Corp (MC)</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                    <input 
+                                        name="identifier" 
+                                        value={forgotData.identifier} 
+                                        onChange={handleForgotChange} 
+                                        placeholder="Email or Phone Number" 
+                                        required 
+                                    />
+                                    <button type="submit" className="button button--primary w-100 mt-2" disabled={loading}>
+                                        {loading ? "Sending..." : "Send OTP"}
+                                    </button>
+                                    <div className="text-center mt-3">
+                                        <button type="button" className="btn btn-link small text-decoration-none" onClick={() => setForgotMode(null)}>Back to Login</button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {forgotMode === 'otp' && (
+                                <form onSubmit={handleVerifyOTP}>
+                                    <p className="text-muted small mb-3">Enter the 6-digit OTP sent to {forgotData.identifier}</p>
+                                    <input 
+                                        name="otp" 
+                                        value={forgotData.otp} 
+                                        onChange={handleForgotChange} 
+                                        placeholder="Enter OTP" 
+                                        maxLength={6}
+                                        required 
+                                    />
+                                    <button type="submit" className="button button--primary w-100 mt-2" disabled={loading}>
+                                        {loading ? "Verifying..." : "Verify OTP"}
+                                    </button>
+                                </form>
+                            )}
+
+                            {forgotMode === 'reset' && (
+                                <form onSubmit={handleResetPassword}>
+                                    <p className="text-muted small mb-3">Set a new strong password for your account.</p>
+                                    <input 
+                                        type="password"
+                                        name="newPassword" 
+                                        value={forgotData.newPassword} 
+                                        onChange={handleForgotChange} 
+                                        placeholder="Enter New Password" 
+                                        required 
+                                    />
+                                    <button type="submit" className="button button--primary w-100 mt-2" disabled={loading}>
+                                        {loading ? "Updating..." : "Reset Password"}
+                                    </button>
+                                </form>
+                            )}
+                        </div>
+                    ) : authMode === "register" ? (
                         <form className="auth-form" onSubmit={handleSubmit}>
                             <h3>Create Your Account</h3>
 
@@ -243,6 +363,11 @@ export default function Auth() {
                                 required
                                 disabled={loading}
                             />
+                            <div className="text-end mb-3">
+                                <button type="button" className="btn btn-link p-0 small text-decoration-none" onClick={() => setForgotMode('request')}>
+                                    Forgot Password?
+                                </button>
+                            </div>
                             <button type="submit" className="button button--primary" disabled={loading}>
                                 {loading ? "Logging in..." : "Log In"}
                             </button>

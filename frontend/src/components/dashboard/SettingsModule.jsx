@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 const SettingsModule = () => {
     const { user } = useOutletContext();
-    const [theme, setTheme] = useState('light');
+    const [theme, setTheme] = useState(localStorage.getItem('wastewise-theme') || 'light');
     const [language, setLanguage] = useState('English');
     const [notifications, setNotifications] = useState(true);
     const accentColor = "#10b981";
+
+    useEffect(() => {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+        localStorage.setItem('wastewise-theme', theme);
+    }, [theme]);
 
     return (
         <div className="dashboard-section-wrap">
@@ -27,7 +36,7 @@ const SettingsModule = () => {
                             </div>
                             <div className="mb-3">
                                 <label className="form-label small fw-bold">Email Address</label>
-                                <input className="form-control" defaultValue={user?.email} />
+                                <input className="form-control" defaultValue={user?.email} readOnly />
                             </div>
                             <div className="mb-4">
                                 <label className="form-label small fw-bold">Profile Photo</label>

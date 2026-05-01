@@ -10,6 +10,14 @@ const DashboardLayout = ({ role }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Apply theme on mount
+        const savedTheme = localStorage.getItem('wastewise-theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+
         const storedUser = localStorage.getItem("wastewise-user");
 
         if (!storedUser) {
@@ -19,10 +27,6 @@ const DashboardLayout = ({ role }) => {
 
         try {
             const parsedUser = JSON.parse(storedUser);
-            if (parsedUser.role !== role && role !== 'any') {
-                // If user role doesn't match the required role for this layout
-                // We could redirect to their specific dashboard here if we want
-            }
             setUser(parsedUser);
         } catch (error) {
             navigate("/auth", { replace: true });

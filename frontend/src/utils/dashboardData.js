@@ -98,7 +98,7 @@ export const panelConfig = {
         ],
         sections: [
             { id: "overview", label: "Dashboard", icon: "fa-tachometer-alt", path: "" },
-            { id: "register", label: "Register Itself", icon: "fa-user-plus", path: "register" },
+            { id: "register", label: "Update Profile", icon: "fa-user-plus", path: "register" },
             { id: "complaint", label: "Make Complaint", icon: "fa-plus-circle", path: "complaint" },
             { id: "history", label: "History", icon: "fa-history", path: "history" }
         ]

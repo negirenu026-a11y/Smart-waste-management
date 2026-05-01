@@ -8,7 +8,7 @@ function Home() {
   const [statsCount, setStatsCount] = useState({ projects: 0, volunteers: 0, people: 0, awards: 0 })
   const [statsStarted, setStatsStarted] = useState(false)
   const statsRef = useRef(null)
-  
+
   const services = [
     {
       title: 'Waste Collection',
@@ -101,21 +101,21 @@ function Home() {
       entries.forEach((entry) => {
         if (entry.isIntersecting && !statsStarted) {
           setStatsStarted(true)
-          const duration = 2000 
+          const duration = 2000
           const startTime = Date.now()
-          
+
           const animateCounters = () => {
             const elapsed = Date.now() - startTime
             const progress = Math.min(elapsed / duration, 1)
             const easeProgress = 1 - Math.pow(1 - progress, 3)
-            
+
             setStatsCount({
               projects: Math.floor(120 * easeProgress),
               volunteers: Math.floor(24 * easeProgress),
               people: Math.floor(35 * easeProgress),
               awards: Math.floor(8 * easeProgress),
             })
-            
+
             if (progress < 1) {
               requestAnimationFrame(animateCounters)
             }
@@ -166,40 +166,48 @@ function Home() {
 
         /* Horizontal Continuous Scrolling Styles */
         .scrolling-wrapper {
-          overflow: hidden;
-          width: 100%;
-          position: relative;
-          padding: 40px 0;
-        }
-        .scrolling-content {
-          display: flex;
-          width: calc(250px * 8);
-          animation: scroll 20s linear infinite;
-        }
-        .scrolling-content:hover {
-          animation-play-state: paused;
-        }
-        .scrolling-item {
-          width: 250px;
-          height: 200px;
-          flex-shrink: 0;
-          padding: 0 10px;
-        }
-        .scrolling-item img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          border-radius: 15px;
-          box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        @keyframes scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(calc(-250px * 4)); }
-        }
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+  padding: 40px 0;
+}
+
+.scrolling-content {
+  display: flex;
+  width: max-content;
+  animation: scrollCards 25s linear infinite;
+}
+
+.scrolling-content:hover {
+  animation-play-state: paused;
+}
+
+.scrolling-card {
+  width: 320px;
+  flex-shrink: 0;
+  padding: 0 15px;
+}
+
+.scrolling-card .card {
+  transition: transform 0.3s ease;
+}
+
+.scrolling-card .card:hover {
+  transform: translateY(-10px);
+}
+
+@keyframes scrollCards {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
       `}</style>
 
       {/* Hero Carousel Section - Fixed Header spacing is handled by MainLayout's .page-main class */}
-      <section className="hero-section position-relative text-white overflow-hidden" style={{ height: '80vh' }}>
+      <section className="hero-section position-relative text-white overflow-hidden" style={{ height: '90vh' }}>
         <div className="carousel-container position-relative h-100">
           {heroSlides.map((slide, index) => (
             <div
@@ -236,35 +244,55 @@ function Home() {
       </section>
 
       {/* Services Section with Continuous Horizontal Slider */}
+      {/* Services Section with Combined Scrolling Cards */}
       <section className="section bg-light py-5">
         <div className="container py-5">
           <div className="section-heading text-center mb-5">
             <span className="eyebrow text-brand">What we do</span>
             <h2 className="fw-bold">How we protect environment</h2>
           </div>
-          
+
           <div className="scrolling-wrapper">
             <div className="scrolling-content">
-              {[...serviceImages, ...serviceImages].map((img, index) => (
-                <div className="scrolling-item" key={index}>
-                  <img src={img} alt={`Service ${index}`} />
+              {[...services, ...services].map((service, index) => (
+                <div className="scrolling-card" key={index}>
+                  <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+
+                    {/* Image */}
+                    <img
+                      src={service.image}
+                      alt={service.title}
+                      className="card-img-top"
+                      style={{
+                        height: '200px',
+                        objectFit: 'cover'
+                      }}
+                    />
+
+                    {/* Content */}
+                    <div className="card-body text-center p-4">
+                      <div
+                        className="icon-box rounded-circle mx-auto mb-3 bg-primary text-white"
+                        style={{
+                          width: '60px',
+                          height: '60px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <i className={`bi ${service.icon} fs-3`}></i>
+                      </div>
+
+                      <h5 className="fw-bold">{service.title}</h5>
+                      <p className="text-secondary small mb-0">
+                        {service.description}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-
-          <div className="row g-4 mt-5">
-            {services.map((service, index) => (
-              <div className="col-md-6 col-lg-3" key={index}>
-                <div className="card h-100 border-0 shadow-sm rounded-4 p-4 bg-white text-center">
-                  <div className="icon-box rounded-circle mx-auto mb-3 bg-primary text-white" style={{ width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <i className={`bi ${service.icon} fs-3`}></i>
-                  </div>
-                  <h5 className="fw-bold">{service.title}</h5>
-                  <p className="text-secondary small mb-0">{service.description}</p>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>

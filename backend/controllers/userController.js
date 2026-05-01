@@ -2,6 +2,7 @@ const User = require("../models/userModel");
 const Area = require("../models/areaModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const sendEmail = require("../utils/sendEmail");
 
 const JWT_SECRET = process.env.JWT_SECRET || "wastewise_secret_2024";
 
@@ -278,6 +279,85 @@ exports.updateProfile = async (req, res) => {
         });
     } catch (err) {
         console.error("UpdateProfile Error:", err);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// POST /api/forgot-password
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { identifier, role } = req.body; // identifier can be email or name
+        if (!identifier) return res.status(400).json({ success: false, message: "Email or Name is required" });
+
+        const user = await User.findOne({
+            $or: [
+                { email: identifier.toLowerCase() },
+                { name: { $regex: new RegExp(`^${identifier.trim()}$`, "i") } }
+            ],
+            userType: role,
+            isDeleted: false
+        });
+
+        if (!user) return res.status(404).json({ success: false, message: "User not found with these details." });
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        user.resetPasswordOTP = otp;
+        user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+        await user.save();
+
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: "WasteWise Password Reset OTP",
+                message: `Your OTP for password reset is: ${otp}. It is valid for 10 minutes. If you did not request this, please ignore this email.`
+            });
+
+            res.status(200).json({ success: true, message: "OTP sent to your registered email." });
+        } catch (mailErr) {
+            user.resetPasswordOTP = null;
+            user.resetPasswordExpires = null;
+            await user.save();
+            console.error("Nodemailer Error Details:", mailErr);
+            return res.status(500).json({ 
+                success: false, 
+                message: `Failed to send email: ${mailErr.message}. Please check your email credentials in .env` 
+            });
+        }
+    } catch (err) {
+        console.error("Forgot Password Error:", err);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// POST /api/reset-password
+exports.resetPassword = async (req, res) => {
+    try {
+        const { identifier, otp, newPassword, role } = req.body;
+
+        const user = await User.findOne({
+            $or: [
+                { email: identifier.toLowerCase() },
+                { name: { $regex: new RegExp(`^${identifier.trim()}$`, "i") } }
+            ],
+            userType: role,
+            resetPasswordOTP: otp,
+            resetPasswordExpires: { $gt: Date.now() },
+            isDeleted: false
+        });
+
+        if (!user) return res.status(400).json({ success: false, message: "Invalid or expired OTP." });
+
+        // Hash new password
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.resetPasswordOTP = null;
+        user.resetPasswordExpires = null;
+        await user.save();
+
+        res.status(200).json({ success: true, message: "Password reset successful. You can now login with your new password." });
+    } catch (err) {
+        console.error("Reset Password Error:", err);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 };

@@ -1,4 +1,4 @@
-const Complaint = require("../models/complaintModel");
+const Complaint = require("../models/mcDetails/complaintModel");
 const User = require("../models/userModel");
 const Area = require("../models/areaModel");
 const path = require("path");
@@ -8,13 +8,30 @@ exports.createComplaint = async (req, res) => {
     try {
         const { type, category, description, district, city, area, location, ward, zone } = req.body;
 
-        // Find the area to get assigned MC
+        // 1. Try to find the area to get specific assigned MC
+        let assignedMcId = null;
         const areaDoc = await Area.findOne({ district, city, name: area, isDeleted: false });
         
-        if (!areaDoc || !areaDoc.mcId) {
+        if (areaDoc && areaDoc.mcId) {
+            assignedMcId = areaDoc.mcId;
+        } else {
+            // 2. Fallback: Find ANY MC registered for this specific City + District
+            const cityMc = await User.findOne({ 
+                userType: "mc", 
+                city: city, 
+                district: district, 
+                isDeleted: false 
+            });
+            
+            if (cityMc) {
+                assignedMcId = cityMc._id;
+            }
+        }
+        
+        if (!assignedMcId) {
             return res.status(400).json({ 
                 success: false, 
-                message: "No Municipal Corporation (MC) assigned to this area. Complaint cannot be filed." 
+                message: "No Municipal Corporation (MC) found for this city/area. Complaint cannot be filed." 
             });
         }
 
@@ -35,7 +52,7 @@ exports.createComplaint = async (req, res) => {
             location,
             ward,
             zone,
-            assignedMcId: areaDoc.mcId,
+            assignedMcId,
             imageUrl
         });
 
@@ -81,9 +98,18 @@ exports.getAllComplaints = async (req, res) => {
 // PATCH /api/complaints/:id/status — Update complaint status (MC/Admin)
 exports.updateComplaintStatus = async (req, res) => {
     try {
-        const { status, assignedWorker } = req.body;
+        const { status, assignedWorker, assignedWorkerId, deadline, completionNote } = req.body;
         const updateData = { status };
+        
         if (assignedWorker) updateData.assignedWorker = assignedWorker;
+        if (assignedWorkerId) updateData.assignedWorkerId = assignedWorkerId;
+        if (deadline) updateData.deadline = deadline;
+        if (completionNote) updateData.completionNote = completionNote;
+        
+        // If resolution proof is uploaded
+        if (req.file) {
+            updateData.proofImage = `/uploads/${req.file.filename}`;
+        }
 
         const complaint = await Complaint.findOneAndUpdate(
             { _id: req.params.id, isDeleted: false },
@@ -95,7 +121,25 @@ exports.updateComplaintStatus = async (req, res) => {
             return res.status(404).json({ success: false, message: "Complaint not found." });
         }
 
-        res.status(200).json({ success: true, message: "Status updated.", complaint });
+        // If a worker is assigned and status is "In Process", create a task if it doesn't exist
+        if (assignedWorkerId && status === "In Process") {
+            const Task = require("../models/mcDetails/taskModel");
+            const existingTask = await Task.findOne({ complaintId: complaint._id });
+            if (!existingTask) {
+                const newTask = new Task({
+                    title: `Cleanup: ${complaint.category}`,
+                    assignedTo: assignedWorker,
+                    assignedToId: assignedWorkerId,
+                    mcId: req.user.id,
+                    deadline: deadline || "Asap",
+                    complaintId: complaint._id,
+                    status: "In Progress"
+                });
+                await newTask.save();
+            }
+        }
+
+        res.status(200).json({ success: true, message: "Complaint updated successfully.", complaint });
     } catch (err) {
         console.error("UpdateStatus Error:", err);
         res.status(500).json({ success: false, message: "Internal server error" });
