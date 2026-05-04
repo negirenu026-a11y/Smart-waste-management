@@ -1,5 +1,6 @@
 const Area = require("../models/areaModel");
 const axios = require("axios");
+const himachalData = require("../data/himachalData");
 
 // GET /api/areas
 exports.getAllAreas = async (req, res) => {
@@ -71,5 +72,53 @@ exports.deleteArea = async (req, res) => {
         res.status(200).json({ success: true, message: "Area deleted successfully" });
     } catch (err) {
         res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// SEED /api/seed/areas
+exports.seedAreas = async (req, res) => {
+    try {
+        let count = 0;
+        for (const district in himachalData) {
+            for (const city of himachalData[district]) {
+                const existing = await Area.findOne({ district, city, isDeleted: false });
+                if (!existing) {
+                    await Area.create({
+                        name: city,
+                        district,
+                        city,
+                        state: "Himachal Pradesh",
+                        zone: "",
+                        ward: "",
+                        pincode: "000000", // Default or dummy
+                        coordinates: { lat: 31.1048, lng: 77.1734 } // Default
+                    });
+                    count++;
+                }
+            }
+        }
+        res.status(200).json({ success: true, message: `Seeded ${count} areas.` });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// GET /api/districts
+exports.getDistricts = async (req, res) => {
+    try {
+        const districtsList = Object.keys(himachalData);
+        res.status(200).json({ success: true, districts: districtsList });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// GET /api/cities/:district
+exports.getCitiesByDistrict = async (req, res) => {
+    try {
+        const cities = himachalData[req.params.district] || [];
+        res.status(200).json({ success: true, cities });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
 };

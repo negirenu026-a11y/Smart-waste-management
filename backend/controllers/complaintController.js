@@ -79,9 +79,16 @@ exports.getAllComplaints = async (req, res) => {
             filter.citizenId = req.user.id;
         }
 
-        // MCs can only see complaints assigned to them
+        // MCs can only see complaints in their city/district
         if (req.user?.role === "mc") {
-            filter.assignedMcId = req.user.id;
+            const mcUser = await User.findById(req.user.id);
+            if (mcUser) {
+                filter.city = mcUser.city;
+                filter.district = mcUser.district;
+            } else {
+                // Fallback to assignedMcId if user not found for some reason
+                filter.assignedMcId = req.user.id;
+            }
         }
 
         const complaints = await Complaint.find(filter)

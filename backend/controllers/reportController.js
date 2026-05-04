@@ -35,7 +35,7 @@ exports.createReport = async (req, res) => {
 exports.getAllReports = async (req, res) => {
     try {
         const filter = { isDeleted: false };
-        if (req.user.userType === "mc") {
+        if (req.user.role === "mc") {
             filter.mcId = req.user.id;
         }
 

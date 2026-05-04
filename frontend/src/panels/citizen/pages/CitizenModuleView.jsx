@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../utils/api';
 import { toast } from 'react-toastify';
-import { districts, HIMACHAL_DATA } from '../../../utils/dashboardData';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -26,6 +25,9 @@ const MapController = ({ center }) => {
 const CitizenModuleView = () => {
     const [locationMode, setLocationMode] = useState(''); 
     const [areas, setAreas] = useState([]);
+    const [districts, setDistricts] = useState([]);
+    const [cities, setCities] = useState([]);
+    const [allAreas, setAllAreas] = useState([]);
     const [formData, setFormData] = useState({
         image: null,
         district: '',
@@ -46,14 +48,32 @@ const CitizenModuleView = () => {
     const [locationError, setLocationError] = useState("");
 
     useEffect(() => {
+        fetchDistricts();
         fetchAvailableAreas();
-        // Do NOT auto-fetch location on mount
     }, []);
+
+    const fetchDistricts = async () => {
+        try {
+            const res = await api.get("/districts");
+            setDistricts(res.data.districts || []);
+        } catch (err) {
+            console.error("Error fetching districts:", err);
+        }
+    };
+
+    const fetchCities = async (district) => {
+        try {
+            const res = await api.get(`/cities/${district}`);
+            setCities(res.data.cities || []);
+        } catch (err) {
+            console.error("Error fetching cities:", err);
+        }
+    };
 
     const fetchAvailableAreas = async () => {
         try {
             const res = await api.get("/areas");
-            setAreas(res.data.areas || []);
+            setAllAreas(res.data.areas || []);
         } catch (err) {
             console.error("Error fetching areas:", err);
         }
@@ -105,10 +125,9 @@ const CitizenModuleView = () => {
 
         setLocating(true);
         setLocationMode('auto');
-        setLocationError(""); // Clear previous errors
+        setLocationError("");
 
         try {
-            // Check permission state if supported
             if (navigator.permissions && navigator.permissions.query) {
                 const permission = await navigator.permissions.query({ name: "geolocation" });
                 if (permission.state === "denied") {
@@ -128,7 +147,6 @@ const CitizenModuleView = () => {
                     toast.success("Precise location fetched!");
                 },
                 async (error) => {
-                    // Fallback to IP-based location if browser denied or failed
                     try {
                         const ipRes = await axios.get("https://ipapi.co/json/");
                         const { latitude, longitude, city: ipCity, region: ipRegion } = ipRes.data;
@@ -161,7 +179,7 @@ const CitizenModuleView = () => {
 
     const handleManualMode = () => {
         setLocationMode('manual');
-        setLocationError(""); // Clear errors when switching to manual
+        setLocationError("");
     };
 
     const handleMarkerDragEnd = async (e) => {
@@ -173,6 +191,16 @@ const CitizenModuleView = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+
+        if (name === 'district') {
+            setCities([]);
+            setFormData(prev => ({ ...prev, city: '', area: '', ward: '', zone: '' }));
+            if (value) fetchCities(value);
+        }
+
+        if (name === 'city') {
+            setFormData(prev => ({ ...prev, area: '', ward: '', zone: '' }));
+        }
 
         if (name === 'pincode' && value.length === 6 && locationMode === 'manual') {
             handlePincodeGeocode(value);
@@ -198,11 +226,10 @@ const CitizenModuleView = () => {
             Object.keys(formData).forEach(key => data.append(key, formData[key]));
             data.append("lat", coords[0]);
             data.append("lng", coords[1]);
-            console.log(data); 
             const res = await api.post("/complaints", data);
             if (res.data.success) {
                 toast.success('Submitted successfully!');
-                setFormData({ image: null, district: '', city: '', area: '', location: '', ward: '', zone: '', category: 'Other', description: '' });
+                setFormData({ image: null, district: '', city: '', area: '', location: '', ward: '', zone: '', category: 'Other', description: '', pincode: '' });
                 setPreview(null);
             }
         } catch (err) {
@@ -212,8 +239,7 @@ const CitizenModuleView = () => {
         }
     };
 
-    const filteredCities = (formData.district && HIMACHAL_DATA[formData.district]) || [];
-    const filteredAreas = areas.filter(a => a.district === formData.district && a.city === formData.city);
+    const filteredAreas = allAreas.filter(a => a.district === formData.district && a.city === formData.city);
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -280,7 +306,7 @@ const CitizenModuleView = () => {
                                 <label className="form-label fw-bold small text-uppercase">City</label>
                                 <select name="city" className="form-select" value={formData.city} onChange={handleChange} required disabled={!formData.district}>
                                     <option value="">Select City</option>
-                                    {filteredCities?.map(c => <option key={c} value={c}>{c}</option>)}
+                                    {cities?.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
                             <div className="col-md-4">

@@ -61,15 +61,7 @@ const WeeklyReport = () => {
                 resolvedTasks: completed
             });
             
-            // Auto-fill form with current stats
-            if (!editingReport) {
-                setFormData(prev => ({
-                    ...prev,
-                    tasksCompleted: completed,
-                    pendingTasks: pending,
-                    workersInvolved: workers.length
-                }));
-            }
+            // No auto-fill as per requirements
         } catch (err) {
             console.error("Error fetching stats:", err);
         }
@@ -94,9 +86,9 @@ const WeeklyReport = () => {
                 setFormData({
                     title: `Weekly Report - ${new Date().toLocaleDateString()}`,
                     description: "",
-                    tasksCompleted: stats.resolvedTasks,
-                    pendingTasks: stats.pendingTasks,
-                    workersInvolved: stats.workers
+                    tasksCompleted: 0,
+                    pendingTasks: 0,
+                    workersInvolved: 0
                 });
                 setShowForm(true);
             }

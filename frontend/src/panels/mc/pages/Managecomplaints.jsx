@@ -8,26 +8,6 @@ const STATUS_COLORS = {
     Resolved: "#10b981",
 };
 
-const DUMMY_COMPLAINTS = [
-    {
-        _id: "dummy1",
-        citizenName: "Rahul Sharma",
-        category: "Plastic Waste",
-        description: "Large pile of plastic bottles near the park entrance.",
-        city: "Dalhousie",
-        zone: "North",
-        ward: "Ward 4",
-        location: "Near Gandhi Chowk",
-        status: "Pending",
-        createdAt: new Date().toISOString(),
-        imageUrl: ""
-    }
-];
-
-const DUMMY_WORKERS = [
-    { _id: "dw1", name: "Sunil Kumar", role: "Collector" },
-    { _id: "dw2", name: "Amit Thakur", role: "Driver" }
-];
 
 const ManageComplaints = () => {
     const [complaints, setComplaints] = useState([]);
@@ -117,8 +97,8 @@ const ManageComplaints = () => {
         }
     };
 
-    const displayData = complaints.length === 0 && !loading ? DUMMY_COMPLAINTS : complaints;
-    const displayWorkers = workers.length === 0 ? DUMMY_WORKERS : workers;
+    const displayData = complaints;
+    const displayWorkers = workers;
     const filtered = filter === "All" ? displayData : (displayData || []).filter(c => c.status === filter);
 
     return (

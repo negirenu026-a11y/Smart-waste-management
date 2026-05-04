@@ -26,23 +26,14 @@ const McDashboard = () => {
                 const tasks = tasksRes.data.tasks || [];
                 const complaints = complaintsRes.data.complaints || [];
 
-                if (workers.length === 0 && tasks.length === 0 && complaints.length === 0) {
-                    setStats({
-                        workers: 5,
-                        tasks: 3,
-                        complaints: 2
-                    });
-                } else {
-                    setStats({
-                        workers: workers.length,
-                        tasks: tasks.filter(t => t.status !== 'Resolved' && t.status !== 'Completed').length,
-                        complaints: complaints.filter(c => c.status !== 'Resolved').length
-                    });
-                }
+                setStats({
+                    workers: workers.length,
+                    tasks: tasks.filter(t => t.status !== 'Resolved' && t.status !== 'Completed').length,
+                    complaints: complaints.filter(c => c.status !== 'Resolved').length
+                });
             } catch (err) {
                 console.error("Failed to fetch dashboard stats", err);
-                // Fallback to dummy data on error too
-                setStats({ workers: 5, tasks: 3, complaints: 2 });
+                setStats({ workers: 0, tasks: 0, complaints: 0 });
             } finally {
                 setLoading(false);
             }

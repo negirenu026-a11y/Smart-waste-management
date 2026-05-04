@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
-import { districts, HIMACHAL_DATA } from "../../../utils/dashboardData";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -24,6 +23,8 @@ const MapController = ({ center }) => {
 
 const Manageareas = () => {
     const [areas, setAreas] = useState([]);
+    const [districts, setDistricts] = useState([]);
+    const [cities, setCities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [form, setForm] = useState({ 
         name: "", 
@@ -32,7 +33,6 @@ const Manageareas = () => {
         zone: "", 
         ward: "", 
         pincode: "",
-        location: "",
         lat: 31.1048,
         lng: 77.1734
     });
@@ -41,6 +41,7 @@ const Manageareas = () => {
 
     useEffect(() => {
         fetchAreas();
+        fetchDistricts();
     }, []);
 
     const fetchAreas = async () => {
@@ -52,6 +53,24 @@ const Manageareas = () => {
             toast.error("Failed to load operational areas.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchDistricts = async () => {
+        try {
+            const res = await api.get("/districts");
+            setDistricts(res.data.districts || []);
+        } catch (err) {
+            console.error("Error fetching districts:", err);
+        }
+    };
+
+    const fetchCities = async (district) => {
+        try {
+            const res = await api.get(`/cities/${district}`);
+            setCities(res.data.cities || []);
+        } catch (err) {
+            console.error("Error fetching cities:", err);
         }
     };
 
@@ -75,6 +94,12 @@ const Manageareas = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
+
+        if (name === 'district') {
+            setCities([]);
+            setForm(prev => ({ ...prev, city: '' }));
+            if (value) fetchCities(value);
+        }
 
         if (name === 'pincode' && value.length === 6) {
             handleGeocode(value);
@@ -122,17 +147,18 @@ const Manageareas = () => {
             zone: area.zone,
             ward: area.ward,
             pincode: area.pincode || "",
-            location: area.location || "",
             lat: lat,
             lng: lng
         });
+        if (area.district) fetchCities(area.district);
         setMapCenter([lat, lng]);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const resetForm = () => {
         setEditingArea(null);
-        setForm({ name: "", district: "", city: "", zone: "", ward: "", pincode: "", location: "", lat: 31.1048, lng: 77.1734 });
+        setForm({ name: "", district: "", city: "", zone: "", ward: "", pincode: "", lat: 31.1048, lng: 77.1734 });
+        setCities([]);
         setMapCenter([31.1048, 77.1734]);
     };
 
@@ -147,13 +173,13 @@ const Manageareas = () => {
         }
     };
 
-    const filteredCities = form.district ? HIMACHAL_DATA[form.district] : [];
-
     return (
         <div className="dashboard-section-wrap p-4">
-            <header className="mb-4">
-                <h2 className="fw-bold">Manage Operational Areas</h2>
-                <p className="text-muted">Define jurisdictions and geographic zones for MC assignments.</p>
+            <header className="mb-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 className="fw-bold">Manage Operational Areas</h2>
+                    <p className="text-muted">Define jurisdictions and geographic zones for MC assignments.</p>
+                </div>
             </header>
 
             <div className="dashboard-card p-4 mb-4 shadow-sm border-0 bg-white">
@@ -176,7 +202,7 @@ const Manageareas = () => {
                             <label className="form-label small fw-bold">City</label>
                             <select className="form-select" name="city" value={form.city} onChange={handleChange} required disabled={!form.district}>
                                 <option value="">Select City</option>
-                                {filteredCities.map(c => <option key={c} value={c}>{c}</option>)}
+                                {cities.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
                         <div className="col-md-4">
@@ -198,11 +224,6 @@ const Manageareas = () => {
                             <label className="form-label small fw-bold">PIN Code (Auto-detects location)</label>
                             <input className="form-control" name="pincode" placeholder="e.g. 171001"
                                 value={form.pincode} onChange={handleChange} required />
-                        </div>
-                        <div className="col-md-12">
-                            <label className="form-label small fw-bold">Description / Landmarks</label>
-                            <input className="form-control" name="location" placeholder="e.g. Near Mall Road"
-                                value={form.location} onChange={handleChange} />
                         </div>
 
                         <div className="col-12 text-end gap-2 d-flex justify-content-end mt-4">
@@ -240,7 +261,6 @@ const Manageareas = () => {
                                             <tr key={a._id}>
                                                  <td className="ps-4">
                                                      <div className="fw-bold text-primary">{a.name}</div>
-                                                     <small className="text-muted">{a.location || "No landmarks"}</small>
                                                  </td>
                                                  <td>
                                                      <span className="fw-bold">{a.district}</span>

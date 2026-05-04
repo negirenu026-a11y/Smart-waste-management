@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
-import { districts, HIMACHAL_DATA } from "../../../utils/dashboardData";
 
 const Managemc = () => {
     const [mcUsers, setMcUsers] = useState([]);
-    const [allAreas, setAllAreas] = useState([]);
+    const [districts, setDistricts] = useState([]);
+    const [cities, setCities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [form, setForm] = useState({ 
         fullName: "", 
@@ -13,16 +13,14 @@ const Managemc = () => {
         password: "", 
         district: "",
         city: "", 
-        area: "",
         zone: "", 
-        ward: "", 
-        location: "" 
+        ward: "" 
     });
     const [editingMc, setEditingMc] = useState(null);
 
     useEffect(() => {
         fetchMCs();
-        fetchAreas();
+        fetchDistricts();
     }, []);
 
     const fetchMCs = async () => {
@@ -37,36 +35,33 @@ const Managemc = () => {
         }
     };
 
-    const fetchAreas = async () => {
+    const fetchDistricts = async () => {
         try {
-            const res = await api.get("/areas");
-            setAllAreas(res.data.areas || []);
+            const res = await api.get("/districts");
+            setDistricts(res.data.districts || []);
         } catch (err) {
-            console.error("Error fetching areas:", err);
+            console.error("Error fetching districts:", err);
+        }
+    };
+
+    const fetchCities = async (district) => {
+        try {
+            const res = await api.get(`/cities/${district}`);
+            setCities(res.data.cities || []);
+        } catch (err) {
+            console.error("Error fetching cities:", err);
         }
     };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setForm((prev) => {
-            const updated = { ...prev, [name]: value };
-            if (name === 'district') {
-                updated.city = ''; updated.area = ''; updated.zone = ''; updated.ward = '';
-            } else if (name === 'city') {
-                updated.area = ''; updated.zone = ''; updated.ward = '';
-            } else if (name === 'area') {
-                // If area selection is now city-based as per Task 4/5
-                updated.city = value;
-                // Find district from HIMACHAL_DATA
-                for (const dist in HIMACHAL_DATA) {
-                    if (HIMACHAL_DATA[dist].includes(value)) {
-                        updated.district = dist;
-                        break;
-                    }
-                }
-            }
-            return updated;
-        });
+        setForm((prev) => ({ ...prev, [name]: value }));
+
+        if (name === 'district') {
+            setCities([]);
+            setForm(prev => ({ ...prev, city: '' }));
+            if (value) fetchCities(value);
+        }
     };
 
     const handleAddMC = async (e) => {
@@ -105,17 +100,17 @@ const Managemc = () => {
             password: "",
             district: mc.district || "",
             city: mc.city || "",
-            area: mc.area || "",
             zone: mc.zone || "",
-            ward: mc.ward || "",
-            location: mc.location || ""
+            ward: mc.ward || ""
         });
+        if (mc.district) fetchCities(mc.district);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const resetForm = () => {
         setEditingMc(null);
-        setForm({ fullName: "", email: "", password: "", district: "", city: "", area: "", zone: "", ward: "", location: "" });
+        setForm({ fullName: "", email: "", password: "", district: "", city: "", zone: "", ward: "" });
+        setCities([]);
     };
 
     const handleDelete = async (id) => {
@@ -128,9 +123,6 @@ const Managemc = () => {
             toast.error("Failed to delete MC record.");
         }
     };
-
-    const filteredCities = form.district ? HIMACHAL_DATA[form.district] : [];
-    const filteredAreas = allAreas.filter(a => a.city === form.city && a.district === form.district);
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -170,24 +162,24 @@ const Managemc = () => {
                             <label className="form-label small fw-bold">City</label>
                             <select className="form-select" name="city" value={form.city} onChange={handleChange} required disabled={!form.district}>
                                 <option value="">Select City</option>
-                                {filteredCities.map(c => <option key={c} value={c}>{c}</option>)}
+                                {cities.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
-                        {/* <div className="col-md-3">
-                            <label className="form-label small fw-bold">Assigned Area (City)</label>
-                            <select className="form-select" name="area" value={form.area} onChange={handleChange} required>
-                                <option value="">Select City</option>
-                                {[...new Set(allAreas.map(a => a.city))].sort().map(city => (
-                                    <option key={city} value={city}>{city}</option>
-                                ))}
-                            </select>
-                        </div> */}
                         <div className="col-md-3">
-                            <label className="form-label small fw-bold">Office Location (Optional)</label>
-                            <input className="form-control" name="location" placeholder="e.g. Town Hall"
-                                value={form.location} onChange={handleChange} />
+                            <label className="form-label small fw-bold">Zone</label>
+                            <select className="form-select" name="zone" value={form.zone} onChange={handleChange} required>
+                                <option value="">Select Zone</option>
+                                <option value="North">North</option>
+                                <option value="South">South</option>
+                                <option value="East">East</option>
+                                <option value="West">West</option>
+                            </select>
                         </div>
-
+                        <div className="col-md-3">
+                            <label className="form-label small fw-bold">Ward No.</label>
+                            <input className="form-control" name="ward" placeholder="e.g. Ward 5"
+                                value={form.ward} onChange={handleChange} required />
+                        </div>
                         <div className="col-12 text-end gap-2 d-flex justify-content-end mt-4">
                             {editingMc && (
                                 <button className="btn btn-light px-4" type="button" onClick={resetForm}>Cancel</button>
@@ -207,7 +199,7 @@ const Managemc = () => {
                             <tr>
                                 <th className="ps-4">MC Name</th>
                                 <th>Assigned Jurisdiction</th>
-                                <th>Ward & Location</th>
+                                <th>Ward</th>
                                 <th>Status</th>
                                 <th className="pe-4 text-end">Actions</th>
                             </tr>
@@ -232,7 +224,6 @@ const Managemc = () => {
                                          </td>
                                          <td>
                                              <p className="mb-0"><strong>Ward:</strong> {mc.ward || "N/A"}</p>
-                                             <p className="mb-0 small text-muted">{mc.location}</p>
                                          </td>
                                          <td><span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Active</span></td>
                                         <td className="pe-4 text-end">

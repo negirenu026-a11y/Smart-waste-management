@@ -23,7 +23,7 @@ exports.getAllMCs = async (req, res) => {
 // Create MC (for Admin manually)
 exports.createMC = async (req, res) => {
     try {
-        const { fullName, email, password, district, city, location } = req.body;
+        const { fullName, email, password, district, city, location, ward, zone } = req.body;
 
         // Check if user already exists in User model
         const existingUser = await User.findOne({ email: email.toLowerCase(), isDeleted: false });
@@ -37,7 +37,9 @@ exports.createMC = async (req, res) => {
             email: email.toLowerCase(),
             district,
             city,
-            location
+            location,
+            ward,
+            zone
         });
 
         // 2. Create the Login Account in User model
@@ -49,7 +51,9 @@ exports.createMC = async (req, res) => {
             userType: "mc",
             district,
             city,
-            location
+            location,
+            ward,
+            zone
         });
 
         res.status(201).json({
@@ -69,7 +73,7 @@ exports.createMC = async (req, res) => {
 // Update MC
 exports.updateMC = async (req, res) => {
     try {
-        const { fullName, email, password, district, city, location } = req.body;
+        const { fullName, email, password, district, city, location, ward, zone } = req.body;
         const mcId = req.params.id;
 
         const oldMC = await MC.findById(mcId);
@@ -81,7 +85,9 @@ exports.updateMC = async (req, res) => {
             email: email.toLowerCase(),
             district,
             city,
-            location
+            location,
+            ward,
+            zone
         }, { new: true });
 
         // 2. Update corresponding User account
@@ -90,7 +96,9 @@ exports.updateMC = async (req, res) => {
             email: email.toLowerCase(),
             district,
             city,
-            location
+            location,
+            ward,
+            zone
         };
         if (password && password.trim() !== "") {
             updateData.password = await bcrypt.hash(password, 10);

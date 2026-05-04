@@ -66,6 +66,11 @@ router.post("/areas", authMiddleware, requireRole("admin"), areaController.creat
 router.patch("/areas/:id", authMiddleware, requireRole("admin"), areaController.updateArea);
 router.delete("/areas/:id", authMiddleware, requireRole("admin"), areaController.deleteArea);
 
+// Dynamic Location Data
+router.get("/districts", areaController.getDistricts);
+router.get("/cities/:district", areaController.getCitiesByDistrict);
+router.post("/seed/areas", authMiddleware, requireRole("admin"), areaController.seedAreas);
+
 // ── Complaint Routes ────────────────────────────────────────────────────────
 router.post("/complaints", authMiddleware, upload.single("image"), complaintController.createComplaint);
 router.get("/complaints", authMiddleware, complaintController.getAllComplaints);

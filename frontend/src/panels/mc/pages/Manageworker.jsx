@@ -6,7 +6,6 @@ import { toast } from "react-toastify";
 const ManageWorkers = () => {
     const { user } = useOutletContext();
     const [workers, setWorkers] = useState([]);
-    const [areas, setAreas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingWorker, setEditingWorker] = useState(null);
@@ -19,7 +18,6 @@ const ManageWorkers = () => {
 
     useEffect(() => {
         fetchWorkers();
-        fetchAreas();
     }, []);
 
     const fetchWorkers = async () => {
@@ -34,23 +32,8 @@ const ManageWorkers = () => {
         }
     };
 
-    const DUMMY_WORKERS = [
-        { _id: "dw1", name: "Sunil Kumar", contact: "9876543210", area: "Lower Bazar", role: "Collector" },
-        { _id: "dw2", name: "Amit Thakur", contact: "9812345678", area: "Mall Road", role: "Driver" }
-    ];
+    const displayWorkers = workers;
 
-    const displayWorkers = workers.length === 0 && !loading ? DUMMY_WORKERS : workers;
-
-    const fetchAreas = async () => {
-        try {
-            const res = await api.get("/areas");
-            // Only show areas for the MC's city
-            const filteredAreas = (res.data.areas || []).filter(a => a.city === user?.city);
-            setAreas(filteredAreas);
-        } catch (err) {
-            console.error("Error fetching areas:", err);
-        }
-    };
 
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -58,6 +41,14 @@ const ManageWorkers = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Validate contact number (exactly 10 digits)
+        const contactRegex = /^[0-9]{10}$/;
+        if (!contactRegex.test(formData.contact)) {
+            toast.warning("Contact number must be exactly 10 digits.");
+            return;
+        }
+
         try {
             if (editingWorker) {
                 const res = await api.patch(`/workers/${editingWorker._id}`, formData);
@@ -131,15 +122,29 @@ const ManageWorkers = () => {
                         </div>
                         <div className="col-md-3">
                             <label className="form-label small fw-bold">Contact No</label>
-                            <input type="text" name="contact" className="form-control" placeholder="Phone" value={formData.contact} onChange={handleInputChange} required />
+                            <input 
+                                type="text" 
+                                name="contact" 
+                                className="form-control" 
+                                placeholder="10-digit number" 
+                                value={formData.contact} 
+                                onChange={handleInputChange} 
+                                maxLength="10"
+                                pattern="[0-9]{10}"
+                                required 
+                            />
                         </div>
                         <div className="col-md-3">
                             <label className="form-label small fw-bold">Assigned Area</label>
-                            <select name="area" className="form-select" value={formData.area} onChange={handleInputChange} required>
-                                <option value="">Select Area</option>
-                                {areas.map(a => <option key={a._id} value={a.name}>{a.name} ({a.zone})</option>)}
-                                {areas.length === 0 && <option disabled>No areas registered for {user?.city}</option>}
-                            </select>
+                            <input 
+                                type="text" 
+                                name="area" 
+                                className="form-control" 
+                                placeholder="Type area name..." 
+                                value={formData.area} 
+                                onChange={handleInputChange} 
+                                required 
+                            />
                         </div>
                         <div className="col-md-3">
                             <label className="form-label small fw-bold">Role</label>

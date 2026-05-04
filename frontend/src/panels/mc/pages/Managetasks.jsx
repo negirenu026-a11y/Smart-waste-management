@@ -33,12 +33,7 @@ const ManageTasks = () => {
         }
     };
 
-    const DUMMY_TASKS = [
-        { _id: "dt1", title: "Clear Waste Bin #12", assignedTo: "Sunil Kumar", deadline: "2024-05-10", priority: "High", status: "Pending" },
-        { _id: "dt2", title: "Street Sweeping - Main St", assignedTo: "Amit Thakur", deadline: "2024-05-11", priority: "Medium", status: "In Progress" }
-    ];
-
-    const displayTasks = tasks.length === 0 && !loading ? DUMMY_TASKS : tasks;
+    const displayTasks = tasks;
 
     const fetchWorkers = async () => {
         try {
