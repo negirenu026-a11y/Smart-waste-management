@@ -104,14 +104,14 @@ export default function Auth() {
         fullName: "",
         email: "",
         phone: "",
-        country: "India",
-        state: "Himachal Pradesh",
+        country: "",
+        state: "",
         district: "",
         city: "",
         password: ""
     });
 
-    const [loginData, setLoginData] = useState({ username: "", password: "" });
+    const [loginData, setLoginData] = useState({ identifier: "", password: "" });
 
     const [forgotMode, setForgotMode] = useState(null); // null, 'request', 'otp', 'reset'
     const [forgotData, setForgotData] = useState({ role: 'citizen', identifier: '', otp: '', newPassword: '' });
@@ -134,6 +134,8 @@ export default function Auth() {
         setError("");
         setLoginData((cur) => ({ ...cur, [e.target.name]: e.target.value }));
     };
+
+    const isEmail = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
 
     const handleForgotChange = (e) => {
         const { name, value } = e.target;
@@ -192,9 +194,17 @@ export default function Auth() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Mobile Number Validation
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(formData.phone)) {
+            toast.error("Please enter a valid 10-digit mobile number.");
+            return;
+        }
+
         setLoading(true);
         setError("");
-        
+
         try {
             const res = await api.post("/register", {
                 ...formData,
@@ -218,14 +228,14 @@ export default function Auth() {
         setError("");
 
         try {
-            const res = await api.post("/login", {
-                username: loginData.username,
-                password: loginData.password
-            });
+            const payload = isEmail(loginData.identifier)
+                ? { email: loginData.identifier, password: loginData.password }
+                : { username: loginData.identifier, password: loginData.password };
+
+            const res = await api.post("/login", payload);
 
             if (res.data.success) {
                 const { user } = res.data;
-                // Store user info for UI (but token is in HTTP-only cookie)
                 localStorage.setItem("wastewise-user", JSON.stringify(user));
                 navigate(`/${user.role}`);
             }
@@ -257,7 +267,7 @@ export default function Auth() {
                     {forgotMode ? (
                         <div className="auth-form">
                             <h3>Reset Password</h3>
-                            
+
                             {forgotMode === 'request' && (
                                 <form onSubmit={handleRequestOTP}>
                                     <p className="text-muted small mb-3">Select your role and enter email/phone to receive OTP.</p>
@@ -266,12 +276,12 @@ export default function Auth() {
                                         <option value="mc">Municipal Corp (MC)</option>
                                         <option value="admin">Admin</option>
                                     </select>
-                                    <input 
-                                        name="identifier" 
-                                        value={forgotData.identifier} 
-                                        onChange={handleForgotChange} 
-                                        placeholder="Email or Phone Number" 
-                                        required 
+                                    <input
+                                        name="identifier"
+                                        value={forgotData.identifier}
+                                        onChange={handleForgotChange}
+                                        placeholder="Email or Phone Number"
+                                        required
                                     />
                                     <button type="submit" className="button button--primary w-100 mt-2" disabled={loading}>
                                         {loading ? "Sending..." : "Send OTP"}
@@ -285,13 +295,13 @@ export default function Auth() {
                             {forgotMode === 'otp' && (
                                 <form onSubmit={handleVerifyOTP}>
                                     <p className="text-muted small mb-3">Enter the 6-digit OTP sent to {forgotData.identifier}</p>
-                                    <input 
-                                        name="otp" 
-                                        value={forgotData.otp} 
-                                        onChange={handleForgotChange} 
-                                        placeholder="Enter OTP" 
+                                    <input
+                                        name="otp"
+                                        value={forgotData.otp}
+                                        onChange={handleForgotChange}
+                                        placeholder="Enter OTP"
                                         maxLength={6}
-                                        required 
+                                        required
                                     />
                                     <button type="submit" className="button button--primary w-100 mt-2" disabled={loading}>
                                         {loading ? "Verifying..." : "Verify OTP"}
@@ -302,13 +312,13 @@ export default function Auth() {
                             {forgotMode === 'reset' && (
                                 <form onSubmit={handleResetPassword}>
                                     <p className="text-muted small mb-3">Set a new strong password for your account.</p>
-                                    <input 
+                                    <input
                                         type="password"
-                                        name="newPassword" 
-                                        value={forgotData.newPassword} 
-                                        onChange={handleForgotChange} 
-                                        placeholder="Enter New Password" 
-                                        required 
+                                        name="newPassword"
+                                        value={forgotData.newPassword}
+                                        onChange={handleForgotChange}
+                                        placeholder="Enter New Password"
+                                        required
                                     />
                                     <button type="submit" className="button button--primary w-100 mt-2" disabled={loading}>
                                         {loading ? "Updating..." : "Reset Password"}
@@ -327,18 +337,18 @@ export default function Auth() {
                             <input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone number" required />
 
                             <select name="country" value={formData.country} onChange={handleChange} required>
-                                <option value="" disabled>Select country</option>
+                                <option value="">Select Country</option>
                                 {countryOptions.map((c) => <option key={c} value={c}>{c}</option>)}
                             </select>
 
                             {formData.country === "India" ? (
                                 <select name="state" value={formData.state} onChange={handleChange} required>
-                                    <option value="" disabled>Select state</option>
+                                    <option value="">Select State</option>
                                     {indiaStates.map((s) => <option key={s} value={s}>{s}</option>)}
                                 </select>
-                            ) : (
+                            ) : formData.country ? (
                                 <input name="state" value={formData.state} onChange={handleChange} placeholder="State / Province" required />
-                            )}
+                            ) : null}
 
                             {formData.state === "Himachal Pradesh" ? (
                                 <>
@@ -347,18 +357,18 @@ export default function Auth() {
                                         {availableDistricts.map((d) => <option key={d} value={d}>{d}</option>)}
                                     </select>
                                     <select name="city" value={formData.city} onChange={handleChange} required disabled={!formData.district}>
-                                        <option value="">{formData.district ? "Select City" : "Select District First"}</option>
+                                        <option value="">Select City</option>
                                         {availableCities.map((city) => <option key={city} value={city}>{city}</option>)}
                                     </select>
                                 </>
-                            ) : formData.country === "India" ? (
-                                <select name="city" value={formData.city} onChange={handleChange} required disabled={!formData.state}>
-                                    <option value="" disabled>{formData.state ? "Select city" : "Select state first"}</option>
+                            ) : formData.country === "India" && formData.state ? (
+                                <select name="city" value={formData.city} onChange={handleChange} required>
+                                    <option value="">Select City</option>
                                     {indiaStateCityMap[formData.state]?.map((city) => <option key={city} value={city}>{city}</option>)}
                                 </select>
-                            ) : (
+                            ) : formData.country && formData.country !== "India" && formData.state ? (
                                 <input name="city" value={formData.city} onChange={handleChange} placeholder="City" required />
-                            )}
+                            ) : null}
 
                             <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Create password" required disabled={loading} />
 
@@ -374,10 +384,11 @@ export default function Auth() {
                         <form className="auth-form" onSubmit={handleLogin}>
                             <h3>Log In To Continue</h3>
                             <input
-                                name="username"
-                                value={loginData.username}
+                                name="identifier"
+                                value={loginData.identifier}
                                 onChange={handleLoginChange}
-                                placeholder="Email or username"
+                                placeholder="Email address or username"
+                                autoComplete="username"
                                 required
                             />
                             <input
@@ -386,6 +397,7 @@ export default function Auth() {
                                 value={loginData.password}
                                 onChange={handleLoginChange}
                                 placeholder="Password"
+                                autoComplete="current-password"
                                 required
                                 disabled={loading}
                             />

@@ -22,6 +22,7 @@ const seedAdmin = async () => {
                 address: process.env.ADMIN_ADDRESS,
                 userType: "admin",
                 city: "System",
+                district: "System",
                 state: "Global"
             }).save();
             console.log("✅ Admin user created.");
@@ -46,15 +47,15 @@ const seedSampleData = async () => {
 
         // ── 1. Create MC Users ────────────────────────────────────────────────
         const mcUsers = await User.insertMany([
-            { name: "North Municipal Corp", email: "north_mc@wastewise.com", password: hashedPassword, userType: "mc", city: "Shimla", state: "HP", phone: "9871000001", zone: "North", ward: "Ward 1", location: "Main Office" },
-            { name: "South Municipal Corp", email: "south_mc@wastewise.com", password: hashedPassword, userType: "mc", city: "Manali", state: "HP", phone: "9822000001", zone: "South", ward: "Ward 5", location: "Town Hall" },
-            { name: "East Municipal Corp", email: "east_mc@wastewise.com", password: hashedPassword, userType: "mc", city: "Dharamshala", state: "HP", phone: "9833000001", zone: "East", ward: "Ward 10", location: "DC Office" }
+            { name: "North Municipal Corp", email: "north_mc@wastewise.com", password: hashedPassword, userType: "mc", city: "Shimla", district: "Shimla", state: "HP", phone: "9871000001", zone: "North", ward: "Ward 1", location: "Main Office" },
+            { name: "South Municipal Corp", email: "south_mc@wastewise.com", password: hashedPassword, userType: "mc", city: "Manali", district: "Kullu", state: "HP", phone: "9822000001", zone: "South", ward: "Ward 5", location: "Town Hall" },
+            { name: "East Municipal Corp", email: "east_mc@wastewise.com", password: hashedPassword, userType: "mc", city: "Dharamshala", district: "Kangra", state: "HP", phone: "9833000001", zone: "East", ward: "Ward 10", location: "DC Office" }
         ]);
 
         // ── 2. Create Citizen Users ─────────────────────────────────────────────
         const citizens = await User.insertMany([
-            { name: "Suresh Raina", email: "suresh@gmail.com", password: hashedPassword, userType: "citizen", city: "Delhi", state: "Delhi", phone: "9871111111" },
-            { name: "Priya Singh", email: "priya@gmail.com", password: hashedPassword, userType: "citizen", city: "Mumbai", state: "Maharashtra", phone: "9822111111" }
+            { name: "Suresh Raina", email: "suresh@gmail.com", password: hashedPassword, userType: "citizen", city: "Delhi", district: "Central Delhi", state: "Delhi", phone: "9871111111" },
+            { name: "Priya Singh", email: "priya@gmail.com", password: hashedPassword, userType: "citizen", city: "Mumbai", district: "Mumbai City", state: "Maharashtra", phone: "9822111111" }
         ]);
 
         // ── 3. Create Workers ──────────────────────────────────────────────────
@@ -91,5 +92,5 @@ const seedSampleData = async () => {
 
 module.exports = async () => {
     await seedAdmin();
-    await seedSampleData();
+    // await seedSampleData();
 };

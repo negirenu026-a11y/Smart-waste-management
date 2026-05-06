@@ -3,7 +3,7 @@ import React from 'react';
 const Contact = () => {
     return (
         <div className="container-fluid contact py-5">
-            <div className="container py-5">
+            <div className="container pb-5">
                 <div className="text-center mx-auto mb-5" style={{ maxWidth: '600px' }}>
                     <h5 className="fw-bold text-primary text-uppercase">Contact Us</h5>
                     <h1 className="display-5 mb-0">Get In Touch For Any Query</h1>

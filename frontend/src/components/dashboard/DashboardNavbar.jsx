@@ -5,22 +5,56 @@ import api from '../../utils/api';
 const DashboardNavbar = ({ user }) => {
     const [showNotif, setShowNotif] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [notifications, setNotifications] = useState([]);
     const navigate = useNavigate();
     const accentColor = "#10b981";
     const userMenuRef = useRef(null);
 
-    const [notifications, setNotifications] = useState([
-        { id: 1, title: "New Complaint filed in Zone A", time: "5 mins ago" },
-        { id: 2, title: "Worker Rajesh is now On Duty", time: "12 mins ago" },
-        { id: 3, title: "System Maintenance at 12 AM", time: "1 hour ago" },
-    ]);
-
-    const clearNotification = (id) => {
-        setNotifications(notifications.filter(n => n.id !== id));
+    // Fetch real notifications
+    const fetchNotifications = async () => {
+        try {
+            const res = await api.get("/notifications");
+            if (res.data.success) {
+                const newNotifs = res.data.notifications || [];
+                
+                // Show toast if a NEW notification arrived (count increased)
+                if (newNotifs.length > notifications.length && notifications.length > 0) {
+                    const latest = newNotifs[0];
+                    const { toast } = await import('react-toastify');
+                    toast.info(`🔔 ${latest.title}: ${latest.message.substring(0, 40)}...`);
+                }
+                
+                setNotifications(newNotifs);
+            }
+        } catch (err) {
+            console.error("Failed to fetch notifications", err);
+        }
     };
 
-    const clearAll = () => {
-        setNotifications([]);
+    useEffect(() => {
+        fetchNotifications();
+        // Poll every 30 seconds for new notifications
+        const interval = setInterval(fetchNotifications, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const clearNotification = async (id) => {
+        try {
+            await api.delete(`/notifications/${id}`);
+            setNotifications(notifications.filter(n => n._id !== id));
+        } catch (err) {
+            console.error("Failed to delete notification", err);
+        }
+    };
+
+    const clearAll = async () => {
+        try {
+            await api.patch("/notifications/read-all");
+            // Optionally fetch again or just clear state
+            setNotifications([]);
+        } catch (err) {
+            console.error("Failed to clear all notifications", err);
+        }
     };
 
     const handleLogout = async () => {
@@ -59,15 +93,19 @@ const DashboardNavbar = ({ user }) => {
                     <div className="position-relative">
                         <button className="dashboard-icon-button" onClick={() => setShowNotif(!showNotif)}>
                             <i className="fas fa-bell" />
-                            {notifications.length > 0 && <span className="dashboard-icon-button__badge">{notifications.length}</span>}
+                            {notifications.filter(n => !n.isRead).length > 0 && (
+                                <span className="dashboard-icon-button__badge">
+                                    {notifications.filter(n => !n.isRead).length}
+                                </span>
+                            )}
                         </button>
                         {showNotif && (
                             <div className="dashboard-notif-dropdown shadow">
                                 <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
                                     <h6 className="m-0 fw-bold">Recent Updates</h6>
                                     <div className="d-flex gap-2">
-                                        {notifications.length > 0 && (
-                                            <button className="btn btn-link btn-sm p-0 text-danger text-decoration-none small" onClick={clearAll}>Clear all</button>
+                                        {notifications.filter(n => !n.isRead).length > 0 && (
+                                            <button className="btn btn-link btn-sm p-0 text-success text-decoration-none small" onClick={clearAll}>Mark all read</button>
                                         )}
                                         <button className="btn btn-link btn-sm p-0 text-decoration-none" onClick={() => setShowNotif(false)}>Close</button>
                                     </div>
@@ -77,18 +115,29 @@ const DashboardNavbar = ({ user }) => {
                                         <div className="p-4 text-center text-muted small">No new notifications</div>
                                     ) : (
                                         notifications.map((n) => (
-                                            <div key={n.id} className="notif-item p-3 border-bottom hover-bg-light position-relative">
+                                            <div key={n._id} className={`notif-item p-3 border-bottom hover-bg-light position-relative ${!n.isRead ? 'bg-light-success' : ''}`} style={!n.isRead ? { borderLeft: `3px solid ${accentColor}` } : {}}>
                                                 <div className="d-flex gap-2 pe-4">
-                                                    <i className="fas fa-info-circle text-primary mt-1" />
-                                                    <div>
-                                                        <p className="mb-0 small fw-bold">{n.title}</p>
-                                                        <span className="text-muted" style={{ fontSize: "0.7rem" }}>{n.time}</span>
+                                                    <i className={`fas ${n.type === 'Complaint' ? 'fa-exclamation-circle text-danger' : 'fa-info-circle text-primary'} mt-1`} />
+                                                    <div onClick={async () => {
+                                                        if(!n.isRead) {
+                                                            await api.patch(`/notifications/${n._id}/read`);
+                                                            fetchNotifications();
+                                                        }
+                                                    }} style={{ cursor: 'pointer' }}>
+                                                        <p className={`mb-0 small ${!n.isRead ? 'fw-bold text-dark' : 'text-muted'}`}>{n.title}</p>
+                                                        <p className="mb-0 text-muted extra-small" style={{ fontSize: '0.75rem' }}>{n.message}</p>
+                                                        <span className="text-muted" style={{ fontSize: "0.7rem" }}>
+                                                            {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(n.createdAt).toLocaleDateString()}
+                                                        </span>
                                                     </div>
                                                 </div>
                                                 <button 
                                                     className="btn btn-sm position-absolute top-50 end-0 translate-middle-y me-2 text-muted border-0 bg-transparent"
-                                                    onClick={() => clearNotification(n.id)}
-                                                    title="Clear notification"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        clearNotification(n._id);
+                                                    }}
+                                                    title="Delete notification"
                                                 >
                                                     <i className="fas fa-times small" />
                                                 </button>

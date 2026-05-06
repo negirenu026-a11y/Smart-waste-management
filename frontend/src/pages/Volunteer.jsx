@@ -31,7 +31,7 @@ const Volunteer = () => {
 
     return (
         <div className="container-fluid volunteer py-5">
-            <div className="container py-5">
+            <div className="container pb-5">
                 {/* Top Section with 2x2 grid of persons */}
                 <div className="row g-5 align-items-center">
                     <div className="col-lg-6">

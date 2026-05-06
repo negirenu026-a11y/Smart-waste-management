@@ -86,17 +86,7 @@ const SettingsModule = () => {
                                 <button className={`btn btn-outline-secondary ${theme === 'dark' ? 'active' : ''}`} onClick={() => setTheme('dark')}>Dark</button>
                             </div>
                         </div>
-                        <div className="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 className="mb-0 fw-bold">Language Preference</h6>
-                                <p className="text-muted small mb-0">Select your preferred language</p>
-                            </div>
-                            <select className="form-select form-select-sm w-auto" value={language} onChange={(e) => setLanguage(e.target.value)}>
-                                <option>English</option>
-                                <option>Hindi</option>
-                                <option>Spanish</option>
-                            </select>
-                        </div>
+                       
                     </div>
                 </div>
 

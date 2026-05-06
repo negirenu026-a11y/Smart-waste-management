@@ -42,7 +42,7 @@ const Blog = () => {
             excerpt: "Innovative techniques for reforestation and habitat recovery in areas affected by wildfires and industrial activity.",
             fullContent: "Recovery after a fire or industrial spill is a slow process, but with the right soil management and waste removal strategies, we can bring life back to scorched lands. Our team is pioneering new methods of soil enrichment using recycled organic waste to speed up reforestation.",
             date: "September 10, 2026",
-            image: "/img/blog-1.jpg"
+            image: "/img/causes-4.jpg"
         },
         {
             id: 6,
@@ -50,13 +50,13 @@ const Blog = () => {
             excerpt: "A deep dive into how modern wind farm technology is becoming more efficient and community-friendly.",
             fullContent: "Modern wind turbines are quieter and more efficient than ever. They represent a significant step towards community-driven power generation. We are working with local municipalities to install small-scale turbines that power local waste collection and sorting facilities.",
             date: "October 5, 2026",
-            image: "/img/blog-2.jpg"
+            image: "/img/events-1.jpg"
         }
     ];
 
     return (
         <div className="container-fluid blog py-5">
-            <div className="container py-5">
+            <div className="container pb-5">
                 <div className="text-center mx-auto mb-5" style={{ maxWidth: '600px' }}>
                     <h5 className="fw-bold text-primary text-uppercase">Our Blog</h5>
                     <h1 className="display-5 mb-0">Latest Stories & News</h1>

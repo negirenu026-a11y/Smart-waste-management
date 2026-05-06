@@ -36,7 +36,7 @@ const Donation = () => {
 
     return (
         <div className="container-fluid donation py-5">
-            <div className="container py-5">
+            <div className="container pb-5">
                 <div className="text-center mx-auto mb-5" style={{ maxWidth: '600px' }}>
                     <h5 className="fw-bold text-primary text-uppercase">Make A Donation</h5>
                     <h1 className="display-5 mb-0">Your Support Matters For Our Mission</h1>

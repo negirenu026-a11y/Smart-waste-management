@@ -66,6 +66,37 @@ exports.createComplaint = async (req, res) => {
 
         await newComplaint.save();
 
+        // Notify Admin(s)
+        try {
+            const Notification = require("../models/notificationModel");
+            const admins = await User.find({ userType: "admin", isDeleted: false });
+            for (const admin of admins) {
+                await Notification.create({
+                    recipient: admin._id,
+                    recipientRole: "admin",
+                    type: "Complaint",
+                    title: "New Complaint Filed",
+                    message: `A new complaint has been filed in ${area}, ${city} by ${citizenName || "a citizen"}.`,
+                    relatedId: newComplaint._id
+                });
+            }
+
+            // Notify Assigned MC
+            if (assignedMcId) {
+                await Notification.create({
+                    recipient: assignedMcId,
+                    recipientRole: "mc",
+                    type: "Complaint",
+                    title: "New Complaint Assigned",
+                    message: `A new ${category} complaint has been filed in your area (${area}).`,
+                    relatedId: newComplaint._id
+                });
+            }
+        } catch (notificationErr) {
+            console.error("Failed to create notification:", notificationErr);
+            // Don't fail the request if notification fails
+        }
+
         res.status(201).json({
             success: true,
             message: "Complaint filed and assigned to MC successfully.",
@@ -113,19 +144,47 @@ exports.getAllComplaints = async (req, res) => {
 // PATCH /api/complaints/:id/status — Update complaint status (MC/Admin)
 exports.updateComplaintStatus = async (req, res) => {
     try {
-        const { status, assignedWorker } = req.body;
+        const { status, assignedWorker, mcResponse } = req.body;
         
+        const updateData = {};
+        if (status) updateData.status = status;
+        if (assignedWorker) updateData.assignedWorker = assignedWorker;
+        if (req.body.assignedWorkerId) updateData.assignedWorkerId = req.body.assignedWorkerId;
+        if (mcResponse) updateData.mcResponse = mcResponse;
+
         const complaint = await Complaint.findByIdAndUpdate(
             req.params.id,
-            {
-                status: status,
-                assignedWorker: assignedWorker || null
-            },
+            updateData,
             { new: true }
         );
 
         if (!complaint) {
             return res.status(404).json({ success: false, message: "Complaint not found" });
+        }
+
+        // Notify Citizen of status update or MC response
+        try {
+            if (complaint.citizenId) {
+                const Notification = require("../models/notificationModel");
+                let title = "Complaint Update";
+                let message = `Your complaint about "${complaint.category}" status is now ${complaint.status}.`;
+                
+                if (mcResponse) {
+                    title = "MC Response Received";
+                    message = `MC replied: "${mcResponse}"`;
+                }
+
+                await Notification.create({
+                    recipient: complaint.citizenId,
+                    recipientRole: "citizen",
+                    type: "Complaint",
+                    title: title,
+                    message: message,
+                    relatedId: complaint._id
+                });
+            }
+        } catch (notificationErr) {
+            console.error("Failed to notify citizen:", notificationErr);
         }
 
         // If a worker is assigned and status is "In Process", create a task if it doesn't exist

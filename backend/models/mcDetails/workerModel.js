@@ -32,6 +32,15 @@ const workerSchema = new mongoose.Schema({
         enum: ["On Duty", "Off Duty"],
         default: "On Duty"
     },
+    leaveStatus: {
+        type: String,
+        enum: ["Available", "On Leave"],
+        default: "Available"
+    },
+    leaveUntil: {
+        type: Date,
+        default: null
+    },
     workerPhoto: {
         type: String,
         default: ""

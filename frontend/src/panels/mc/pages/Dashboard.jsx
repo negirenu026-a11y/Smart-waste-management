@@ -85,7 +85,7 @@ const McDashboard = () => {
             </div>
 
             <div className="row g-4 mt-2">
-                <div className="col-lg-8">
+                <div className="col-lg-12">
                     <h5 className="fw-bold mb-3">Operational Queue</h5>
                     <div className="dashboard-card p-0 overflow-hidden shadow-sm border-0 bg-white">
                         <div className="table-responsive">
@@ -102,8 +102,6 @@ const McDashboard = () => {
                                         <tr><td colSpan={3} className="text-center py-5 text-muted small">No recent activity found.</td></tr>
                                     ) : (
                                         <>
-                                            {/* We can show a few recent items here if we had the full arrays, 
-                                                but to keep it simple and safe, we'll show a summary message or fetch more */}
                                             <tr>
                                                 <td className="ps-4">
                                                     <div className="small fw-bold">Pending Reports</div>
@@ -125,24 +123,6 @@ const McDashboard = () => {
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                </div>
-                <div className="col-lg-4">
-                    <h5 className="fw-bold mb-3">Quick Actions</h5>
-                    <div className="d-grid gap-3">
-                        {quickActions.map((action, index) => (
-                            <div 
-                                key={index}
-                                className="dashboard-card p-3 d-flex align-items-center gap-3 hover-lift shadow-sm border-0 bg-white" 
-                                style={{ cursor: 'pointer', borderLeft: `4px solid ${action.color}` }}
-                                onClick={() => navigate(action.path)}
-                            >
-                                <div className="rounded-circle d-flex align-items-center justify-content-center" style={{ width: 40, height: 40, background: `${action.color}15`, color: action.color }}>
-                                    <i className={`fas ${action.icon}`}></i>
-                                </div>
-                                <h6 className="fw-bold m-0 small">{action.label}</h6>
-                            </div>
-                        ))}
                     </div>
                 </div>
             </div>

@@ -12,7 +12,7 @@ function Gallery() {
 
   return (
     <div className="container-fluid gallery py-5">
-      <div className="container py-5">
+      <div className="container pb-5">
         <div className="text-center mx-auto mb-5" style={{ maxWidth: '600px' }}>
           <h5 className="fw-bold text-primary text-uppercase">Our Gallery</h5>
           <h1 className="display-5 mb-0">Moments From Our Projects</h1>

@@ -20,6 +20,25 @@ exports.createReport = async (req, res) => {
 
         await newReport.save();
 
+        // Notify Admin(s)
+        try {
+            const User = require("../models/userModel");
+            const Notification = require("../models/notificationModel");
+            const admins = await User.find({ userType: "admin", isDeleted: false });
+            for (const admin of admins) {
+                await Notification.create({
+                    recipient: admin._id,
+                    recipientRole: "admin",
+                    type: "Report",
+                    title: "New MC Report Submitted",
+                    message: `MC ${req.user.name} from ${req.user.city || 'their zone'} has submitted a new weekly report: "${title}".`,
+                    relatedId: newReport._id
+                });
+            }
+        } catch (notifErr) {
+            console.error("Failed to notify admins of report:", notifErr);
+        }
+
         res.status(201).json({
             success: true,
             message: "Report created successfully.",
@@ -119,6 +138,21 @@ exports.respondToReport = async (req, res) => {
 
         if (!report) {
             return res.status(404).json({ success: false, message: "Report not found." });
+        }
+
+        // Notify MC of Admin's response
+        try {
+            const Notification = require("../models/notificationModel");
+            await Notification.create({
+                recipient: report.mcId,
+                recipientRole: "mc",
+                type: "Report",
+                title: "Report Feedback Received",
+                message: `Admin has ${status === 'Approved' ? 'approved' : 'reviewed'} your report: "${report.title}". Feedback: ${adminResponse || 'No comment'}.`,
+                relatedId: report._id
+            });
+        } catch (notifErr) {
+            console.error("Failed to notify MC of report response:", notifErr);
         }
 
         res.status(200).json({ success: true, message: "Response recorded.", report });

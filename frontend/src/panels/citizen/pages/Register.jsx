@@ -59,6 +59,14 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Mobile Number Validation
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(formData.phone)) {
+            toast.error("Please enter a valid 10-digit mobile number.");
+            return;
+        }
+
         try {
             const res = await api.patch("/profile", formData);
             if (res.data.success) {

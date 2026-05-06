@@ -64,11 +64,11 @@ exports.registerUser = async (req, res) => {
 
         // If MC, link to area
         if (userType === "mc") {
-            const areaDoc = await Area.findOne({ 
-                district: district, 
-                city: city, 
+            const areaDoc = await Area.findOne({
+                district: district,
+                city: city,
                 name: area,
-                isDeleted: false 
+                isDeleted: false
             });
             if (areaDoc) {
                 areaDoc.mcId = newUser._id;
@@ -86,7 +86,7 @@ exports.registerUser = async (req, res) => {
             try {
                 const decoded = jwt.verify(adminToken, JWT_SECRET);
                 if (decoded.role === 'admin') isAdminCreating = true;
-            } catch (e) {}
+            } catch (e) { }
         }
 
         if (!isAdminCreating) {
@@ -214,7 +214,7 @@ exports.updateUser = async (req, res) => {
     try {
         const { name, email, phone, password, state, city, userType, zone, ward, location } = req.body;
         const updateData = {};
-        
+
         if (name) updateData.name = name;
         if (email) updateData.email = email.toLowerCase();
         if (phone) updateData.phone = phone;
@@ -249,7 +249,7 @@ exports.updateProfile = async (req, res) => {
     try {
         const userId = req.user.id;
         const { name, phone, state, city, zone, ward, location } = req.body;
-        
+
         const updateData = {};
         if (name) updateData.name = name;
         if (phone) updateData.phone = phone;
@@ -260,7 +260,7 @@ exports.updateProfile = async (req, res) => {
         if (location) updateData.location = location;
 
         const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
-        
+
         res.status(200).json({
             success: true,
             message: "Profile updated successfully",
@@ -302,7 +302,7 @@ exports.forgotPassword = async (req, res) => {
 
         // Generate 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        
+
         user.resetPasswordOTP = otp;
         user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
         await user.save();
@@ -320,9 +320,9 @@ exports.forgotPassword = async (req, res) => {
             user.resetPasswordExpires = null;
             await user.save();
             console.error("Nodemailer Error Details:", mailErr);
-            return res.status(500).json({ 
-                success: false, 
-                message: `Failed to send email: ${mailErr.message}. Please check your email credentials in .env` 
+            return res.status(500).json({
+                success: false,
+                message: `Failed to send email: ${mailErr.message}. Please check your email credentials in .env`
             });
         }
     } catch (err) {

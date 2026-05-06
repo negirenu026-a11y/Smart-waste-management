@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './causes.css';
 
 const Causes = () => {
@@ -43,7 +44,7 @@ const Causes = () => {
 
     return (
         <div className="container-fluid causes py-5">
-            <div className="container py-5">
+            <div className="container pb-5">
                 <div className="text-center mx-auto mb-5" style={{ maxWidth: '600px' }}>
                     <h5 className="fw-bold text-primary text-uppercase">Our Causes</h5>
                     <h1 className="display-5 mb-0">Support Our Environmental Initiatives</h1>
@@ -74,7 +75,7 @@ const Causes = () => {
                                     </div>
                                 </div>
                                 <div className="causes-btn p-4 pt-0">
-                                    <a className="btn btn-outline-primary w-100 rounded-pill px-4" href="#">Support Now</a>
+                                    <Link to="/donation" className="btn btn-outline-primary w-100 rounded-pill px-4">Support Now</Link>
                                 </div>
                             </div>
                         </div>

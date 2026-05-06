@@ -91,6 +91,10 @@ const complaintSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    mcResponse: {
+        type: String,
+        default: ""
+    },
     isDeleted: {
         type: Boolean,
         default: false

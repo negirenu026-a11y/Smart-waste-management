@@ -215,9 +215,52 @@ const ManageComplaints = () => {
                                         </div>
                                         
                                         <hr />
+                                        
+                                        <div className="mc-response-section mb-3">
+                                            <h6 className="fw-bold mb-2 small text-uppercase text-muted">MC Response / Communication</h6>
+                                            <div className="d-flex gap-2 mb-2">
+                                                <input 
+                                                    type="text" 
+                                                    className="form-control form-control-sm" 
+                                                    placeholder="Message to citizen..." 
+                                                    value={note} 
+                                                    onChange={(e) => setNote(e.target.value)} 
+                                                />
+                                                <button 
+                                                    className="btn btn-sm btn-primary"
+                                                    onClick={async () => {
+                                                        if (!note) return toast.warning("Enter a message");
+                                                        try {
+                                                            await api.patch(`/complaints/${selectedComplaint._id}/status`, { mcResponse: note });
+                                                            toast.success("Message sent to citizen!");
+                                                            fetchComplaints();
+                                                            setNote("");
+                                                        } catch (err) { toast.error("Failed to send message"); }
+                                                    }}
+                                                >
+                                                    Send
+                                                </button>
+                                            </div>
+                                            <div className="d-flex gap-2">
+                                                <button 
+                                                    className="btn btn-sm btn-outline-warning small py-1"
+                                                    style={{ fontSize: '0.7rem' }}
+                                                    onClick={() => setNote("This area is already being cleaned. Any other complaint you can send me.")}
+                                                >
+                                                    Mark as Duplicate Notice
+                                                </button>
+                                            </div>
+                                            {selectedComplaint.mcResponse && (
+                                                <div className="mt-2 p-2 bg-light border rounded small italic">
+                                                    <strong>Sent:</strong> {selectedComplaint.mcResponse}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <hr />
 
                                         {selectedComplaint.status === "Pending" && !isAssigning && (
-                                            <div className="d-grid gap-2">
+                                            <div className="d-grid gap-2 mb-3">
                                                 <button className="btn btn-primary" onClick={() => setIsAssigning(true)}>Assign Worker & Deadline</button>
                                             </div>
                                         )}

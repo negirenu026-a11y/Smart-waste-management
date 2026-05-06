@@ -5,7 +5,7 @@ const About = () => {
 
     return (
         <div className="container-fluid about py-5">
-            <div className="container py-5">
+            <div className="container pb-5">
                 <div className="row g-5 align-items-center">
                     <div className="col-lg-6">
                         <div className="about-img">

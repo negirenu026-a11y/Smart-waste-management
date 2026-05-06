@@ -21,6 +21,7 @@ const seedAll = require("./config/seed");
 const routes = require("./routes/userRoutes");
 const cityDataRoutes = require("./routes/cityDataRoutes");
 const mcRoutes = require("./routes/mcRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 // ── Middleware ─────────────────────────────────────────────────────────────
 app.use(cors({
@@ -43,6 +44,7 @@ app.get("/", (req, res) => {
 app.use("/api", routes);
 app.use("/api/city-data", cityDataRoutes);
 app.use("/api/mcs", mcRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // ── 404 Handler ────────────────────────────────────────────────────────────
 app.use((req, res) => {

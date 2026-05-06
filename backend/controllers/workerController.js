@@ -1,13 +1,26 @@
 const Worker = require("../models/mcDetails/workerModel");
 const Task = require("../models/mcDetails/taskModel");
 
-// Get all workers (Admin/MC)
+// Get all workers (Admin/MC) — auto-resets expired leaves on fetch
 exports.getAllWorkers = async (req, res) => {
     try {
         let filter = { isDeleted: false };
         if (req.user?.role === "mc") {
             filter.mcId = req.user.id;
         }
+
+        // Auto-reset workers whose leave date has passed
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        await Worker.updateMany(
+            {
+                ...filter,
+                leaveStatus: "On Leave",
+                leaveUntil: { $lt: today }   // leaveUntil is before today → leave expired
+            },
+            { $set: { leaveStatus: "Available", leaveUntil: null } }
+        );
+
         const workers = await Worker.find(filter).sort({ createdAt: -1 });
         res.status(200).json({ success: true, workers });
     } catch (err) {

@@ -127,13 +127,13 @@ body.dark-mode {
 .welcome-marquee {
   background: var(--dark-green);
   color: white;
-  padding: 0.5rem 0;
-  font-size: 0.85rem;
+  padding: 0.2rem 0;
+  font-size: 0.8rem;
   font-weight: 500;
 }
 
 .dashboard-topbar {
-  height: 70px;
+  height: 60px;
   background: var(--card-bg);
   border-bottom: 1px solid var(--border-color);
   padding: 0 2rem;
@@ -224,7 +224,7 @@ body.dark-mode {
 }
 
 .dashboard-content {
-  padding: 2rem;
+  padding: 0.75rem 1.5rem;
   flex-grow: 1;
 }
 
