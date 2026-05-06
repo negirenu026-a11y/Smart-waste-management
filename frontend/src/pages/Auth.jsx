@@ -32,6 +32,21 @@ const indiaStates = [
     "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
 ];
 
+const districtCityData = {
+    Shimla: ["Shimla", "Rohru", "Rampur", "Theog"],
+    Kullu: ["Kullu", "Manali", "Banjar", "Bhuntar"],
+    Mandi: ["Mandi", "Sundernagar", "Jogindernagar"],
+    Kangra: ["Dharamshala", "Palampur", "Kangra"],
+    Una: ["Una", "Amb", "Haroli"],
+    Solan: ["Solan", "Baddi", "Nalagarh"],
+    Sirmaur: ["Nahan", "Paonta Sahib", "Rajgarh"],
+    Chamba: ["Chamba", "Dalhousie", "Bharmour"],
+    Bilaspur: ["Bilaspur", "Ghumarwin", "Jhandutta"],
+    Hamirpur: ["Hamirpur", "Nadaun", "Barsar"],
+    Kinnaur: ["Reckong Peo", "Kalpa", "Sangla"],
+    Lahaul_and_Spiti: ["Keylong", "Kaza", "Udaipur"]
+};
+
 const indiaStateCityMap = {
     "Andhra Pradesh": ["Amaravati", "Anantapur", "Chittoor", "Guntur", "Kadapa", "Kakinada", "Kurnool", "Nellore", "Rajahmundry", "Tirupati", "Vijayawada", "Visakhapatnam"],
     "Arunachal Pradesh": ["Along", "Bomdila", "Itanagar", "Naharlagun", "Pasighat", "Tawang", "Tezu", "Ziro"],
@@ -90,7 +105,8 @@ export default function Auth() {
         email: "",
         phone: "",
         country: "India",
-        state: "",
+        state: "Himachal Pradesh",
+        district: "",
         city: "",
         password: ""
     });
@@ -100,17 +116,16 @@ export default function Auth() {
     const [forgotMode, setForgotMode] = useState(null); // null, 'request', 'otp', 'reset'
     const [forgotData, setForgotData] = useState({ role: 'citizen', identifier: '', otp: '', newPassword: '' });
 
-    const availableCities =
-        formData.country === "India" && formData.state
-            ? indiaStateCityMap[formData.state] || []
-            : [];
+    const availableDistricts = Object.keys(districtCityData);
+    const availableCities = formData.district ? districtCityData[formData.district] : [];
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setError("");
         setFormData((cur) => {
-            if (name === "country") return { ...cur, country: value, state: "", city: "" };
-            if (name === "state") return { ...cur, state: value, city: "" };
+            if (name === "country") return { ...cur, country: value, state: "", district: "", city: "" };
+            if (name === "state") return { ...cur, state: value, district: "", city: "" };
+            if (name === "district") return { ...cur, district: value, city: "" };
             return { ...cur, [name]: value };
         });
     };
@@ -325,10 +340,21 @@ export default function Auth() {
                                 <input name="state" value={formData.state} onChange={handleChange} placeholder="State / Province" required />
                             )}
 
-                            {formData.country === "India" ? (
+                            {formData.state === "Himachal Pradesh" ? (
+                                <>
+                                    <select name="district" value={formData.district} onChange={handleChange} required>
+                                        <option value="">Select District</option>
+                                        {availableDistricts.map((d) => <option key={d} value={d}>{d}</option>)}
+                                    </select>
+                                    <select name="city" value={formData.city} onChange={handleChange} required disabled={!formData.district}>
+                                        <option value="">{formData.district ? "Select City" : "Select District First"}</option>
+                                        {availableCities.map((city) => <option key={city} value={city}>{city}</option>)}
+                                    </select>
+                                </>
+                            ) : formData.country === "India" ? (
                                 <select name="city" value={formData.city} onChange={handleChange} required disabled={!formData.state}>
                                     <option value="" disabled>{formData.state ? "Select city" : "Select state first"}</option>
-                                    {availableCities.map((city) => <option key={city} value={city}>{city}</option>)}
+                                    {indiaStateCityMap[formData.state]?.map((city) => <option key={city} value={city}>{city}</option>)}
                                 </select>
                             ) : (
                                 <input name="city" value={formData.city} onChange={handleChange} placeholder="City" required />

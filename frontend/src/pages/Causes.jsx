@@ -5,8 +5,8 @@ const Causes = () => {
     const causes = [
         {
             id: 1,
-            title: "Garbage Cleanup Drive",
-            description: "Organizing massive cleanup drives in urban areas to ensure a cleaner and healthier environment.",
+            title: "Air Quality Monitoring",
+            description: "Campaigning for cleaner air and reduction of harmful industrial emissions in our urban centers.",
             goal: "$5000",
             raised: "$3200",
             image: "/img/causes-1.jpg",
@@ -14,8 +14,8 @@ const Causes = () => {
         },
         {
             id: 2,
-            title: "Plastic Free Campaign",
-            description: "Promoting the reduction of single-use plastics and encouraging sustainable alternatives.",
+            title: "Environmental Education",
+            description: "Empowering the next generation with knowledge about zero-waste living and sustainability.",
             goal: "$5000",
             raised: "$3200",
             image: "/img/causes-2.jpg",
@@ -23,8 +23,8 @@ const Causes = () => {
         },
         {
             id: 3,
-            title: "Smart Waste Bins",
-            description: "Deploying IoT-enabled smart bins across the city for optimized waste collection routes.",
+            title: "Community Advocacy",
+            description: "Supporting citizen-led movements to demand better environmental policies and services.",
             goal: "$5000",
             raised: "$3200",
             image: "/img/causes-3.jpg",
@@ -32,11 +32,11 @@ const Causes = () => {
         },
         {
             id: 4,
-            title: "Community Awareness",
-            description: "Empowering citizens with knowledge about waste segregation and environmental protection.",
+            title: "Nature Restoration",
+            description: "Joining hands to plant trees and restore local habitats for a greener future.",
             goal: "$5000",
             raised: "$3200",
-            image: "/img/causes-4.jpg",
+            image: "/img/donation-1.jpg",
             progress: 64
         }
     ];

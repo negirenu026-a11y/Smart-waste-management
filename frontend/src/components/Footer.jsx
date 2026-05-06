@@ -32,8 +32,8 @@ function Footer() {
           <div className="col-md-4">
             <h6 className="mb-3">Contact</h6>
             <p className="mb-1">123 Green Lane, Nature City</p>
-            <p className="mb-1">hello@environs.org</p>
-            <p>+1 (555) 123-4567</p>
+            <p className="mb-1">negirenu026@gmail.com</p>
+            <p>+91 86289-71014</p>
           </div>
         </div>
         <div className="footer-bottom text-center mt-4 pt-3 border-top border-secondary opacity-75">

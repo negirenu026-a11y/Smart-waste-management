@@ -11,27 +11,27 @@ function Home() {
 
   const services = [
     {
-      title: 'Waste Collection',
-      description: 'Efficient door-to-door garbage collection ensuring cleanliness across all zones.',
-      icon: 'bi-truck',
+      title: 'Organic Waste Recycling',
+      description: 'Turning organic waste into nutrient-rich compost for urban farming and green spaces.',
+      icon: 'bi-flower1',
       image: '/img/service-1.jpg'
     },
     {
-      title: 'Recycling Management',
-      description: 'Smart segregation and recycling system for plastic, organic, and hazardous waste.',
-      icon: 'bi-recycle',
+      title: 'Marine Waste Control',
+      description: 'Implementing smart systems to stop plastic waste from reaching our precious oceans.',
+      icon: 'bi-droplet',
       image: '/img/service-2.jpg'
     },
     {
-      title: 'Smart Monitoring',
-      description: 'Real-time tracking of waste levels and worker activities using smart technology.',
-      icon: 'bi-cpu',
+      title: 'Sustainable Disposal',
+      description: 'Moving beyond traditional landfills towards advanced 100% waste-to-energy solutions.',
+      icon: 'bi-recycle',
       image: '/img/service-3.jpg'
     },
     {
-      title: 'Public Awareness',
-      description: 'Educating citizens about proper waste disposal and environmental responsibility.',
-      icon: 'bi-megaphone',
+      title: 'Ecosystem Preservation',
+      description: 'Ensuring waste management practices protect local wildlife and essential pollinators.',
+      icon: 'bi-bug',
       image: '/img/service-4.jpg'
     },
   ]
@@ -45,18 +45,18 @@ function Home() {
 
   const causes = [
     {
-      title: 'Garbage Cleanup Drive',
-      text: 'Organizing massive cleanup drives in urban areas to ensure a cleaner and healthier environment.',
+      title: 'Air Quality Monitoring',
+      text: 'Campaigning for cleaner air and reduction of harmful industrial emissions in our urban centers.',
       image: '/img/causes-1.jpg',
     },
     {
-      title: 'Plastic Free Campaign',
-      text: 'Promoting the reduction of single-use plastics and encouraging sustainable alternatives.',
+      title: 'Environmental Education',
+      text: 'Empowering the next generation with knowledge about zero-waste living and sustainability.',
       image: '/img/causes-2.jpg',
     },
     {
-      title: 'Smart Waste Bins',
-      text: 'Deploying IoT-enabled smart bins across the city for optimized waste collection routes.',
+      title: 'Community Advocacy',
+      text: 'Supporting citizen-led movements to demand better environmental policies and waste services.',
       image: '/img/causes-3.jpg',
     },
   ]

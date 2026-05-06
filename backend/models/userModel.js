@@ -30,10 +30,12 @@ const userSchema = new mongoose.Schema({
     },
     district: {
         type: String,
+        required: true,
         default: ""
     },
     city: {
         type: String,
+        required: true,
         default: ""
     },
     area: {

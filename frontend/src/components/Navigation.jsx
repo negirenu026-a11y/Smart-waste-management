@@ -10,10 +10,10 @@ function Navigation() {
       <div className="top-bar bg-success text-white py-2">
         <div className="container-fluid px-3 d-flex justify-content-between align-items-center">
           <div className="top-header-left small text-truncate">
-            <i className="bi bi-envelope me-2"></i> support@wastewise.com
+            <i className="bi bi-envelope me-2"></i> ranunegi407@gmail.coman
             <span className="mx-3 d-none d-md-inline">|</span>
             <span className="d-none d-md-inline">
-              <i className="bi bi-phone me-2"></i> +91 (555) 123-4567
+              <i className="bi bi-phone me-2"></i> +91 80910-18394
             </span>
           </div>
           <div className="top-header-right small fw-bold text-nowrap">

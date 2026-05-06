@@ -1,8 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { districts, HIMACHAL_DATA } from '../../../utils/dashboardData';
 import api from '../../../utils/api';
 import { useOutletContext } from 'react-router-dom';
+
+const districtCityData = {
+    Shimla: ["Shimla", "Rohru", "Rampur", "Theog"],
+    Kullu: ["Kullu", "Manali", "Banjar", "Bhuntar"],
+    Mandi: ["Mandi", "Sundernagar", "Jogindernagar"],
+    Kangra: ["Dharamshala", "Palampur", "Kangra"],
+    Una: ["Una", "Amb", "Haroli"],
+    Solan: ["Solan", "Baddi", "Nalagarh"],
+    Sirmaur: ["Nahan", "Paonta Sahib", "Rajgarh"],
+    Chamba: ["Chamba", "Dalhousie", "Bharmour"],
+    Bilaspur: ["Bilaspur", "Ghumarwin", "Jhandutta"],
+    Hamirpur: ["Hamirpur", "Nadaun", "Barsar"],
+    Kinnaur: ["Reckong Peo", "Kalpa", "Sangla"],
+    Lahaul_and_Spiti: ["Keylong", "Kaza", "Udaipur"]
+};
 
 const Register = () => {
     const { user } = useOutletContext();
@@ -56,7 +70,8 @@ const Register = () => {
         }
     };
 
-    const filteredCities = formData.district ? HIMACHAL_DATA[formData.district] : [];
+    const availableDistricts = Object.keys(districtCityData);
+    const filteredCities = formData.district ? districtCityData[formData.district] : [];
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -83,7 +98,7 @@ const Register = () => {
                         <label className="form-label fw-bold small text-uppercase">District</label>
                         <select name="district" className="form-select p-3 bg-light border-0" value={formData.district} onChange={handleChange} required>
                             <option value="">Select District</option>
-                            {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                            {availableDistricts.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
                     </div>
                     <div className="col-md-4">

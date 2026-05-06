@@ -67,23 +67,15 @@ const ManageComplaints = () => {
                 setIsAssigning(false);
             }
         } catch (err) {
-            toast.error("Assignment failed.");
+            console.error(err.response?.data);
+            toast.error(err.response?.data?.message || "Failed to assign worker.");
         }
     };
 
     const handleResolve = async () => {
-        if (!proofFile || !note) {
-            toast.warning("Proof image and note are required for resolution.");
-            return;
-        }
-        const formData = new FormData();
-        formData.append("image", proofFile);
-        formData.append("status", "Resolved");
-        formData.append("completionNote", note);
-
         try {
-            const res = await api.patch(`/complaints/${selectedComplaint._id}/status`, formData, {
-                headers: { "Content-Type": "multipart/form-data" }
+            const res = await api.patch(`/complaints/${selectedComplaint._id}/status`, {
+                status: "Resolved"
             });
             if (res.data.success) {
                 toast.success("Complaint resolved successfully!");
@@ -93,7 +85,8 @@ const ManageComplaints = () => {
                 setNote("");
             }
         } catch (err) {
-            toast.error("Failed to resolve complaint.");
+            console.error(err.response?.data);
+            toast.error(err.response?.data?.message || "Failed to resolve complaint.");
         }
     };
 
@@ -125,6 +118,7 @@ const ManageComplaints = () => {
                                 <th className="ps-4">Citizen & Image</th>
                                 <th>Details</th>
                                 <th>Regional Info</th>
+                                <th>Priority</th>
                                 <th>Status</th>
                                 <th className="text-end pe-4">Actions</th>
                             </tr>
@@ -163,6 +157,11 @@ const ManageComplaints = () => {
                                                 <p className="mb-0"><strong>City:</strong> {c.city}</p>
                                                 <p className="mb-0"><strong>Zone:</strong> {c.zone}</p>
                                             </div>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${c.priority === 'High' ? 'bg-danger' : c.priority === 'Medium' ? 'bg-warning text-dark' : 'bg-info'}`}>
+                                                {c.priority || "Medium"}
+                                            </span>
                                         </td>
                                         <td>
                                             <span className="badge rounded-pill" style={{ backgroundColor: `${STATUS_COLORS[c.status || 'Pending']}15`, color: STATUS_COLORS[c.status || 'Pending'], border: `1px solid ${STATUS_COLORS[c.status || 'Pending']}30` }}>
@@ -207,7 +206,12 @@ const ManageComplaints = () => {
                                                 {selectedComplaint.status || "Pending"}
                                             </span>
                                             <h3 className="fw-bold mb-0">{selectedComplaint.category || selectedComplaint.type}</h3>
-                                            <small className="text-muted">Reported on {new Date(selectedComplaint.createdAt).toLocaleString()}</small>
+                                            <div className="d-flex gap-2 align-items-center mt-1">
+                                                <span className={`badge ${selectedComplaint.priority === 'High' ? 'bg-danger' : selectedComplaint.priority === 'Medium' ? 'bg-warning text-dark' : 'bg-info'}`}>
+                                                    Priority: {selectedComplaint.priority || "Medium"}
+                                                </span>
+                                                <small className="text-muted">Reported on {new Date(selectedComplaint.createdAt).toLocaleString()}</small>
+                                            </div>
                                         </div>
                                         
                                         <hr />

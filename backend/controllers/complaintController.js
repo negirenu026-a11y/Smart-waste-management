@@ -38,6 +38,13 @@ exports.createComplaint = async (req, res) => {
         const citizenId = req.user?.id;
         const citizenName = req.user?.name || "";
         const imageUrl = req.file ? `/uploads/${req.file.filename}` : "";
+        
+        // Smart Priority Logic
+        let calculatedPriority = "Medium";
+        const combinedText = `${type} ${category} ${description}`.toLowerCase();
+        if (combinedText.includes("overflow") || combinedText.includes("urgent")) {
+            calculatedPriority = "High";
+        }
 
         const newComplaint = new Complaint({
             citizenId,
@@ -53,7 +60,8 @@ exports.createComplaint = async (req, res) => {
             ward,
             zone,
             assignedMcId,
-            imageUrl
+            imageUrl,
+            priority: calculatedPriority
         });
 
         await newComplaint.save();
@@ -105,40 +113,32 @@ exports.getAllComplaints = async (req, res) => {
 // PATCH /api/complaints/:id/status — Update complaint status (MC/Admin)
 exports.updateComplaintStatus = async (req, res) => {
     try {
-        const { status, assignedWorker, assignedWorkerId, deadline, completionNote } = req.body;
-        const updateData = { status };
+        const { status, assignedWorker } = req.body;
         
-        if (assignedWorker) updateData.assignedWorker = assignedWorker;
-        if (assignedWorkerId) updateData.assignedWorkerId = assignedWorkerId;
-        if (deadline) updateData.deadline = deadline;
-        if (completionNote) updateData.completionNote = completionNote;
-        
-        // If resolution proof is uploaded
-        if (req.file) {
-            updateData.proofImage = `/uploads/${req.file.filename}`;
-        }
-
-        const complaint = await Complaint.findOneAndUpdate(
-            { _id: req.params.id, isDeleted: false },
-            updateData,
+        const complaint = await Complaint.findByIdAndUpdate(
+            req.params.id,
+            {
+                status: status,
+                assignedWorker: assignedWorker || null
+            },
             { new: true }
         );
 
         if (!complaint) {
-            return res.status(404).json({ success: false, message: "Complaint not found." });
+            return res.status(404).json({ success: false, message: "Complaint not found" });
         }
 
         // If a worker is assigned and status is "In Process", create a task if it doesn't exist
-        if (assignedWorkerId && status === "In Process") {
+        if (req.body.assignedWorkerId && status === "In Process") {
             const Task = require("../models/mcDetails/taskModel");
             const existingTask = await Task.findOne({ complaintId: complaint._id });
             if (!existingTask) {
                 const newTask = new Task({
                     title: `Cleanup: ${complaint.category}`,
                     assignedTo: assignedWorker,
-                    assignedToId: assignedWorkerId,
+                    assignedToId: req.body.assignedWorkerId,
                     mcId: req.user.id,
-                    deadline: deadline || "Asap",
+                    deadline: req.body.deadline || "Asap",
                     complaintId: complaint._id,
                     status: "In Progress"
                 });
@@ -146,7 +146,7 @@ exports.updateComplaintStatus = async (req, res) => {
             }
         }
 
-        res.status(200).json({ success: true, message: "Complaint updated successfully.", complaint });
+        return res.json({ success: true, complaint });
     } catch (err) {
         console.error("UpdateStatus Error:", err);
         res.status(500).json({ success: false, message: "Internal server error" });

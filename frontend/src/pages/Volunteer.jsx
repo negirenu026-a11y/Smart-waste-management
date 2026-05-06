@@ -23,7 +23,7 @@ const Volunteer = () => {
         },
         {
             id: 4,
-            name: "Emma Wilson",
+            name: "James Wilson",
             role: "Team Lead",
             image: "/img/volunteers-4.jpg"
         }

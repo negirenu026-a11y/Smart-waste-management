@@ -15,7 +15,7 @@ const About = () => {
                     <div className="col-lg-6">
                         <div className="section-header text-start">
                             <h5 className="fw-bold text-primary text-uppercase">About Us</h5>
-                            <h1 className="display-4 mb-4">Our Mission for a Cleaner Environment</h1>
+                            <h1 className="display-4 mb-4">Our Mission: ECO NOT EGO</h1>
                         </div>
                         <p className="mb-4">
                             We are committed to enhancing waste management awareness and building a smart city vision. 

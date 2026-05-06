@@ -175,7 +175,37 @@ const ManageTasks = () => {
                                                 <span>{task.assignedTo || "Unassigned"}</span>
                                             </div>
                                         </td>
-                                        <td>{task.deadline || "Today"}</td>
+                                        <td>
+                                            <div className="d-flex flex-column">
+                                                <span>{task.deadline || "Today"}</span>
+                                                {task.status !== 'Completed' && task.status !== 'Resolved' && task.deadline && (() => {
+                                                    const now = new Date();
+                                                    const dl = new Date(task.deadline);
+                                                    const diffTime = dl - now;
+                                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                                    
+                                                    let badgeClass = "bg-success";
+                                                    let badgeText = "On Time";
+                                                    
+                                                    if (diffDays < 0) {
+                                                        badgeClass = "bg-danger";
+                                                        badgeText = "Overdue";
+                                                    } else if (diffDays <= 2) {
+                                                        badgeClass = "bg-warning text-dark";
+                                                        badgeText = "Near Deadline";
+                                                    }
+                                                    
+                                                    return (
+                                                        <div className="mt-1">
+                                                            <span className={`badge ${badgeClass}`} style={{ fontSize: '0.65rem' }}>{badgeText}</span>
+                                                            <small className="ms-1 text-muted" style={{ fontSize: '0.7rem' }}>
+                                                                {diffDays < 0 ? `${Math.abs(diffDays)}d late` : `${diffDays}d left`}
+                                                             </small>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                        </td>
                                         <td>
                                             <span className={`badge ${task.priority === 'High' ? 'bg-danger' : task.priority === 'Medium' ? 'bg-warning text-dark' : 'bg-info'}`}>
                                                 {task.priority}

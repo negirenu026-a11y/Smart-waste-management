@@ -47,10 +47,30 @@ const CitizenModuleView = () => {
     const [coords, setCoords] = useState([31.1048, 77.1734]); // Shimla default
     const [locationError, setLocationError] = useState("");
 
+    const [history, setHistory] = useState([]);
+    const [historyFilter, setHistoryFilter] = useState('All');
+    const [feedback, setFeedback] = useState({}); // { complaintId: { rating, comment } }
+
     useEffect(() => {
         fetchDistricts();
         fetchAvailableAreas();
+        loadHistory();
     }, []);
+
+    const loadHistory = async () => {
+        // Load from LocalStorage first
+        const localData = localStorage.getItem('citizen_complaints');
+        if (localData) setHistory(JSON.parse(localData));
+
+        try {
+            const res = await api.get("/complaints");
+            const serverComplaints = res.data.complaints || [];
+            setHistory(serverComplaints);
+            localStorage.setItem('citizen_complaints', JSON.stringify(serverComplaints));
+        } catch (err) {
+            console.error("Error fetching history:", err);
+        }
+    };
 
     const fetchDistricts = async () => {
         try {
@@ -220,6 +240,13 @@ const CitizenModuleView = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.image) { toast.warning("Upload an image."); return; }
+
+        // Duplicate Warning check
+        const similar = history.find(c => c.area === formData.area && c.category === formData.category && c.status !== 'Resolved');
+        if (similar) {
+            if (!window.confirm("⚠️ Similar complaint already exists in this area. Continue anyway?")) return;
+        }
+
         setSubmitting(true);
         try {
             const data = new FormData();
@@ -228,9 +255,10 @@ const CitizenModuleView = () => {
             data.append("lng", coords[1]);
             const res = await api.post("/complaints", data);
             if (res.data.success) {
-                toast.success('Submitted successfully!');
+                toast.success('Complaint submitted successfully!');
                 setFormData({ image: null, district: '', city: '', area: '', location: '', ward: '', zone: '', category: 'Other', description: '', pincode: '' });
                 setPreview(null);
+                loadHistory(); // Refresh
             }
         } catch (err) {
             toast.error(err.response?.data?.message || "Submission failed.");
@@ -239,7 +267,29 @@ const CitizenModuleView = () => {
         }
     };
 
-    const filteredAreas = allAreas.filter(a => a.district === formData.district && a.city === formData.city);
+    const handleFeedback = (id, rating, comment) => {
+        const newFeedback = { ...feedback, [id]: { rating, comment } };
+        setFeedback(newFeedback);
+        localStorage.setItem('citizen_feedback', JSON.stringify(newFeedback));
+        toast.success("Feedback submitted!");
+    };
+
+    const getTimeAgo = (date) => {
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " years ago";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " months ago";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " days ago";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " hours ago";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " minutes ago";
+        return Math.floor(seconds) + " seconds ago";
+    };
+
+    const filteredHistory = historyFilter === 'All' ? history : history.filter(c => c.status === historyFilter);
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -248,7 +298,7 @@ const CitizenModuleView = () => {
                 <p className="text-muted">Submit a waste management complaint for your area.</p>
             </header>
 
-            <div className="dashboard-card p-4 shadow-sm border-0 bg-white">
+            <div className="dashboard-card p-4 shadow-sm border-0 bg-white mb-5">
                 <form onSubmit={handleSubmit} className="row g-4">
                     <div className="col-md-12">
                         <label className="form-label fw-bold small text-uppercase">Evidence Image</label>
@@ -372,6 +422,101 @@ const CitizenModuleView = () => {
                         </button>
                     </div>
                 </form>
+            </div>
+
+            <div className="history-section mt-5">
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                    <h3 className="fw-bold mb-0">Recent Activity</h3>
+                    <select className="form-select w-auto shadow-sm" value={historyFilter} onChange={(e) => setHistoryFilter(e.target.value)}>
+                        <option value="All">All Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="In Process">In Process</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+                </div>
+
+                <div className="row g-4">
+                    {filteredHistory.map((c) => (
+                        <div key={c._id} className="col-md-6 col-lg-4">
+                            <div className="dashboard-card p-0 overflow-hidden shadow-sm border-0 bg-white h-100">
+                                <div className="position-relative">
+                                    <img src={`http://localhost:4000${c.imageUrl}`} className="w-100" style={{ height: '180px', objectFit: 'cover' }} alt="Complaint" />
+                                    <span className={`badge position-absolute top-0 end-0 m-3 ${c.status === 'Resolved' ? 'bg-success' : c.status === 'In Process' ? 'bg-warning text-dark' : 'bg-danger'}`}>
+                                        {c.status}
+                                    </span>
+                                </div>
+                                <div className="p-4">
+                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 className="fw-bold mb-0 text-primary">{c.category}</h5>
+                                        <small className="text-muted">{getTimeAgo(c.createdAt)}</small>
+                                    </div>
+                                    <p className="small text-muted mb-3"><i className="fas fa-map-marker-alt me-2 text-danger"></i>{c.location || c.area}</p>
+                                    
+                                    <div className="timeline-wrap mb-4">
+                                        <label className="small fw-bold text-uppercase text-muted d-block mb-2" style={{ fontSize: '0.65rem' }}>Status Timeline</label>
+                                        <div className="d-flex align-items-center gap-2">
+                                            <div className="rounded-circle bg-success" style={{ width: '8px', height: '8px' }}></div>
+                                            <div className="flex-grow-1 bg-light" style={{ height: '2px' }}>
+                                                <div className="bg-success h-100" style={{ width: c.status !== 'Pending' ? '100%' : '0%' }}></div>
+                                            </div>
+                                            <div className={`rounded-circle ${c.status !== 'Pending' ? 'bg-success' : 'bg-secondary bg-opacity-25'}`} style={{ width: '8px', height: '8px' }}></div>
+                                            <div className="flex-grow-1 bg-light" style={{ height: '2px' }}>
+                                                <div className="bg-success h-100" style={{ width: c.status === 'Resolved' ? '100%' : '0%' }}></div>
+                                            </div>
+                                            <div className={`rounded-circle ${c.status === 'Resolved' ? 'bg-success' : 'bg-secondary bg-opacity-25'}`} style={{ width: '8px', height: '8px' }}></div>
+                                        </div>
+                                        <div className="d-flex justify-content-between mt-1" style={{ fontSize: '0.6rem' }}>
+                                            <span>Submitted</span>
+                                            <span>Processing</span>
+                                            <span>Resolved</span>
+                                        </div>
+                                    </div>
+
+                                    {c.status === 'Resolved' && (
+                                        <div className="resolved-details mt-3 p-3 bg-light rounded border-start border-success border-4">
+                                            <h6 className="fw-bold text-success mb-2 small"><i className="fas fa-check-circle me-1"></i> Issue Resolved</h6>
+                                            <p className="small mb-2 italic">"{c.completionNote || 'Work completed successfully.'}"</p>
+                                            
+                                            {c.proofImage && (
+                                                <div className="before-after-wrap d-flex gap-2 mb-3">
+                                                    <div className="flex-1 text-center">
+                                                        <small className="d-block text-muted mb-1" style={{ fontSize: '0.6rem' }}>Before</small>
+                                                        <img src={`http://localhost:4000${c.imageUrl}`} className="rounded border w-100" style={{ height: '60px', objectFit: 'cover' }} alt="Before" />
+                                                    </div>
+                                                    <div className="flex-1 text-center">
+                                                        <small className="d-block text-muted mb-1" style={{ fontSize: '0.6rem' }}>After</small>
+                                                        <img src={`http://localhost:4000${c.proofImage}`} className="rounded border w-100" style={{ height: '60px', objectFit: 'cover' }} alt="After" />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {!feedback[c._id] ? (
+                                                <div className="feedback-form mt-2 pt-2 border-top">
+                                                    <label className="small fw-bold d-block mb-1">Rate Resolution</label>
+                                                    <div className="d-flex gap-1 mb-2">
+                                                        {[1, 2, 3, 4, 5].map(star => (
+                                                            <i key={star} className="far fa-star text-warning" style={{ cursor: 'pointer' }} onClick={() => handleFeedback(c._id, star, 'Thank you!')}></i>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="feedback-done mt-2 small text-muted">
+                                                    <span className="text-warning">{'★'.repeat(feedback[c._id].rating)}</span> Feedback saved locally.
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    {filteredHistory.length === 0 && (
+                        <div className="col-12 text-center py-5 text-muted">
+                            <i className="fas fa-history fa-3x mb-3 opacity-25"></i>
+                            <p>No complaints found in this category.</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

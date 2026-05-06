@@ -5,26 +5,26 @@ const Services = () => {
     const services = [
         {
             id: 1,
-            title: "Waste Collection",
-            description: "Efficient door-to-door garbage collection ensuring cleanliness across all zones.",
+            title: "Organic Waste Recycling",
+            description: "Turning organic waste into nutrient-rich compost for urban farming and green spaces.",
             image: "/img/service-1.jpg"
         },
         {
             id: 2,
-            title: "Recycling Management",
-            description: "Smart segregation and recycling system for plastic, organic, and hazardous waste.",
+            title: "Marine Waste Control",
+            description: "Implementing smart systems to stop plastic waste from reaching our precious oceans.",
             image: "/img/service-2.jpg"
         },
         {
             id: 3,
-            title: "Smart Monitoring",
-            description: "Real-time tracking of waste levels and worker activities using smart technology.",
+            title: "Sustainable Disposal",
+            description: "Moving beyond traditional landfills towards advanced 100% waste-to-energy solutions.",
             image: "/img/service-3.jpg"
         },
         {
             id: 4,
-            title: "Public Awareness",
-            description: "Educating citizens about proper waste disposal and environmental responsibility.",
+            title: "Ecosystem Preservation",
+            description: "Ensuring waste management practices protect local wildlife and essential pollinators.",
             image: "/img/service-4.jpg"
         }
     ];

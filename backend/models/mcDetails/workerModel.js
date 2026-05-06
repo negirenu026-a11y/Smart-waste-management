@@ -40,10 +40,6 @@ const workerSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
-    availability: {
-        type: Boolean,
-        default: true
-    },
     isDeleted: {
         type: Boolean,
         default: false

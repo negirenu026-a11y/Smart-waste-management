@@ -6,49 +6,49 @@ const Blog = () => {
     const posts = [
         {
             id: 1,
-            title: "Save The Topic Forests",
-            excerpt: "Learn about the importance of protecting our forest ecosystems and how you can help. Forests provide habitat for diverse wildlife and regulate our climate...",
-            fullContent: "Forests are the lungs of our planet. They provide habitat for over 80% of terrestrial biodiversity and are crucial for the livelihoods of 1.6 billion people. Reforestation and protection of existing forests are vital steps in combating climate change and preserving nature for future generations. Join our community cleanup drives and reforestation programs to make a real difference.",
+            title: "Impact of Climate Change",
+            excerpt: "Understanding the devastating effects of rising temperatures on our forest ecosystems and global climate stability.",
+            fullContent: "The increasing frequency of forest fires and extreme weather events is a direct result of global warming. Our latest study shows how these changes are disrupting local biodiversity and what we can do to mitigate the damage through smarter waste management and emission reduction.",
             date: "May 12, 2026",
             image: "/img/blog-1.jpg"
         },
         {
             id: 2,
-            title: "Save The Topic Forests",
-            excerpt: "Explore the impact of urban waste on local wildlife and reforestation efforts. As cities expand, the pressure on natural habitats increases...",
-            fullContent: "Urban expansion often comes at a cost to the environment. Waste management becomes a critical challenge, and if not handled correctly, it leads to pollution of water bodies and destruction of animal habitats. Our smart waste monitoring systems and community awareness campaigns aim to bridge the gap between urban living and environmental sustainability.",
+            title: "The Future of Green Power",
+            excerpt: "How renewable energy sources like wind and solar are transforming our urban landscape and reducing carbon footprints.",
+            fullContent: "Transitioning to renewable energy is no longer an option but a necessity. Wind turbines and solar panels are becoming integral parts of smart cities, providing clean energy while reducing our reliance on fossil fuels. Our projects focus on integrating these technologies into waste-to-energy plants.",
             date: "June 5, 2026",
             image: "/img/blog-2.jpg"
         },
         {
             id: 3,
-            title: "Save The Topic Forests",
-            excerpt: "Community-driven actions are the backbone of environmental restoration. When citizens take ownership of their local environment, change happens...",
-            fullContent: "The power of the community is unmatched. From small plastic-free campaigns to large-scale cleanup drives, every action counts. We empower citizens with tools and knowledge to manage waste effectively at the source. By working together, we can ensure a cleaner, greener, and more sustainable future for everyone in our city.",
+            title: "Protecting Our Water Resources",
+            excerpt: "Exploring the beauty and importance of natural water bodies and the urgent need to keep them free from pollution.",
+            fullContent: "Waterfalls and rivers are the lifeblood of our environment. However, they are increasingly threatened by industrial waste and plastic pollution. We are implementing advanced filtration and waste tracking systems to ensure our natural wonders remain pristine for generations to come.",
             date: "July 20, 2026",
             image: "/img/blog-3.jpg"
         },
         {
             id: 4,
-            title: "Save The Topic Forests",
-            excerpt: "How smart technology is revolutionizing waste management in modern cities. IoT and real-time tracking are changing the game...",
-            fullContent: "Technology is a powerful ally in waste management. Our IoT-enabled smart bins track fill levels in real-time, optimizing collection routes and reducing fuel consumption. Data analytics help us understand waste patterns and improve system efficiency. This smart approach ensures that our city remains clean while minimizing our carbon footprint.",
+            title: "Biodiversity in the Heartland",
+            excerpt: "The vital role of dense forests in maintaining ecological balance and supporting diverse life forms.",
+            fullContent: "Forests are more than just trees; they are complex ecosystems that support millions of species. By managing urban waste effectively, we prevent harmful chemicals from leaching into forest soils, protecting the delicate balance of nature and ensuring a healthy planet for all.",
             date: "August 15, 2026",
             image: "/img/blog-4.jpg"
         },
         {
             id: 5,
-            title: "Save The Topic Forests",
-            excerpt: "Sustainable living tips for a zero-waste lifestyle in a busy urban environment. Small changes in daily habits lead to big impacts...",
-            fullContent: "Living a sustainable life doesn't have to be complicated. Start by segregating waste at home, using reusable bags, and avoiding single-use plastics. Composting organic waste can significantly reduce the amount of garbage sent to landfills. These small, consistent steps collective create a massive positive impact on our environment and inspire others to follow suit.",
+            title: "Restoring Scorched Earth",
+            excerpt: "Innovative techniques for reforestation and habitat recovery in areas affected by wildfires and industrial activity.",
+            fullContent: "Recovery after a fire or industrial spill is a slow process, but with the right soil management and waste removal strategies, we can bring life back to scorched lands. Our team is pioneering new methods of soil enrichment using recycled organic waste to speed up reforestation.",
             date: "September 10, 2026",
             image: "/img/blog-1.jpg"
         },
         {
             id: 6,
-            title: "Save The Topic Forests",
-            excerpt: "The role of public awareness in achieving long-term environmental goals. Education is the key to lasting behavioral change...",
-            fullContent: "Awareness is the first step towards action. Through workshops, school programs, and public events, we educate citizens about the importance of proper waste disposal and recycling. When people understand the 'why' behind environmental protection, they are more likely to participate actively. Our goal is to build a well-informed and environmentally conscious society.",
+            title: "The Wind Energy Revolution",
+            excerpt: "A deep dive into how modern wind farm technology is becoming more efficient and community-friendly.",
+            fullContent: "Modern wind turbines are quieter and more efficient than ever. They represent a significant step towards community-driven power generation. We are working with local municipalities to install small-scale turbines that power local waste collection and sorting facilities.",
             date: "October 5, 2026",
             image: "/img/blog-2.jpg"
         }

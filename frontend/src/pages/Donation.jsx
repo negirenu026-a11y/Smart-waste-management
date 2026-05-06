@@ -8,23 +8,23 @@ const Donation = () => {
     const donationCards = [
         {
             id: 1,
-            title: "Help Us More",
-            subtitle: "Protect Environments",
-            category: "Organic",
+            title: "Nature Restoration",
+            subtitle: "Help us plant more trees and restore habitats.",
+            category: "Ecosystem",
             image: "/img/donation-1.jpg"
         },
         {
             id: 2,
-            title: "Help Us More",
-            subtitle: "Protect Environments",
-            category: "Ecosystem",
+            title: "Mountain Cleanup",
+            subtitle: "Removing plastic waste from high-altitude areas.",
+            category: "Waste Free",
             image: "/img/donation-3.jpg"
         },
         {
             id: 3,
-            title: "Help Us More",
-            subtitle: "Protect Environments",
-            category: "Recycling",
+            title: "Save Our Oceans",
+            subtitle: "Protecting marine life from plastic pollution.",
+            category: "Marine Life",
             image: "/img/service-2.jpg"
         }
     ];
