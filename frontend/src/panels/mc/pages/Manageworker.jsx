@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
+import { useSearch } from "../../../context/SearchContext";
 
 const leaveStatusStyle = {
     "Available": {
@@ -19,13 +20,14 @@ const leaveStatusStyle = {
 };
 
 const roleColors = {
-    Driver:     { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe" },
-    Sweeper:    { bg: "#faf5ff", color: "#6d28d9", border: "#ddd6fe" },
-    Collector:  { bg: "#fff7ed", color: "#c2410c", border: "#fed7aa" },
+    Driver: { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe" },
+    Sweeper: { bg: "#faf5ff", color: "#6d28d9", border: "#ddd6fe" },
+    Collector: { bg: "#fff7ed", color: "#c2410c", border: "#fed7aa" },
     Supervisor: { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0" },
 };
 
 const ManageWorkers = () => {
+    const { searchTerm } = useSearch();
     const { user } = useOutletContext();
     const [workers, setWorkers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -107,7 +109,7 @@ const ManageWorkers = () => {
             // Show inline date picker
             setLeavePicker(worker._id);
             // Default to today
-            const today = new Date();
+            // const today = new Date();
             setLeaveDate(today.toISOString().split("T")[0]);
         }
     };
@@ -137,6 +139,12 @@ const ManageWorkers = () => {
 
     const onLeaveCount = workers.filter(w => w.leaveStatus === "On Leave").length;
     const availableCount = workers.filter(w => w.leaveStatus !== "On Leave").length;
+
+    const filteredWorkers = (workers || []).filter(w => 
+        Object.values(w).some(val => 
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -224,13 +232,13 @@ const ManageWorkers = () => {
                                 <tr><td colSpan={6} className="text-center py-5">
                                     <div className="spinner-border text-success" role="status"><span className="visually-hidden">Loading...</span></div>
                                 </td></tr>
-                            ) : workers.length === 0 ? (
+                            ) : filteredWorkers.length === 0 ? (
                                 <tr><td colSpan={6} className="text-center py-5 text-muted">
-                                    <i className="fas fa-users fa-2x mb-2 d-block opacity-25"></i>
-                                    No workers registered yet.
+                                    <i className="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
+                                    No matching results found.
                                 </td></tr>
                             ) : (
-                                workers.map((w) => {
+                                filteredWorkers.map((w) => {
                                     const leave = leaveStatusStyle[w.leaveStatus] || leaveStatusStyle["Available"];
                                     const role = roleColors[w.role] || { bg: "#f1f5f9", color: "#475569", border: "#cbd5e1" };
                                     const isOnLeave = w.leaveStatus === "On Leave";

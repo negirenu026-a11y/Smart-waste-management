@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
+import { useSearch } from "../../../context/SearchContext";
 
 const STATUS_COLORS = {
     Pending: "#ef4444",
@@ -10,6 +11,7 @@ const STATUS_COLORS = {
 
 
 const ManageComplaints = () => {
+    const { searchTerm } = useSearch();
     const [complaints, setComplaints] = useState([]);
     const [workers, setWorkers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -92,7 +94,13 @@ const ManageComplaints = () => {
 
     const displayData = complaints;
     const displayWorkers = workers;
-    const filtered = filter === "All" ? displayData : (displayData || []).filter(c => c.status === filter);
+    const filteredByStatus = filter === "All" ? displayData : (displayData || []).filter(c => c.status === filter);
+
+    const filtered = filteredByStatus.filter(c => 
+        Object.values(c).some(val => 
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -120,6 +128,7 @@ const ManageComplaints = () => {
                                 <th>Regional Info</th>
                                 <th>Priority</th>
                                 <th>Status</th>
+                                <th>Feedback</th>
                                 <th className="text-end pe-4">Actions</th>
                             </tr>
                         </thead>
@@ -127,7 +136,10 @@ const ManageComplaints = () => {
                             {loading ? (
                                 <tr><td colSpan={5} className="text-center py-5">Loading complaints...</td></tr>
                             ) : filtered.length === 0 ? (
-                                <tr><td colSpan={5} className="text-center py-5 text-muted">No complaints found.</td></tr>
+                                <tr><td colSpan={6} className="text-center py-5 text-muted">
+                                    <i className="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
+                                    No matching results found.
+                                </td></tr>
                             ) : (
                                 filtered.map((c) => (
                                     <tr key={c._id}>
@@ -167,6 +179,19 @@ const ManageComplaints = () => {
                                             <span className="badge rounded-pill" style={{ backgroundColor: `${STATUS_COLORS[c.status || 'Pending']}15`, color: STATUS_COLORS[c.status || 'Pending'], border: `1px solid ${STATUS_COLORS[c.status || 'Pending']}30` }}>
                                                 {c.status || "Pending"}
                                             </span>
+                                        </td>
+                                        <td>
+                                            {c.feedbackRating > 0 ? (
+                                                <div className="d-flex align-items-center gap-1">
+                                                    <span className="text-warning small">
+                                                        {[...Array(c.feedbackRating)].map((_, i) => <i key={i} className="fas fa-star"></i>)}
+                                                        {[...Array(5 - c.feedbackRating)].map((_, i) => <i key={i} className="far fa-star"></i>)}
+                                                    </span>
+                                                    <span className="small text-muted ms-1">{c.feedbackRating}/5</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-muted small">{c.status === 'Resolved' ? '⏳ Pending' : '—'}</span>
+                                            )}
                                         </td>
                                         <td className="text-end pe-4">
                                             <button className="btn btn-sm btn-outline-info" onClick={() => setSelectedComplaint(c)}>
@@ -213,20 +238,20 @@ const ManageComplaints = () => {
                                                 <small className="text-muted">Reported on {new Date(selectedComplaint.createdAt).toLocaleString()}</small>
                                             </div>
                                         </div>
-                                        
+
                                         <hr />
-                                        
+
                                         <div className="mc-response-section mb-3">
                                             <h6 className="fw-bold mb-2 small text-uppercase text-muted">MC Response / Communication</h6>
                                             <div className="d-flex gap-2 mb-2">
-                                                <input 
-                                                    type="text" 
-                                                    className="form-control form-control-sm" 
-                                                    placeholder="Message to citizen..." 
-                                                    value={note} 
-                                                    onChange={(e) => setNote(e.target.value)} 
+                                                <input
+                                                    type="text"
+                                                    className="form-control form-control-sm"
+                                                    placeholder="Message to citizen..."
+                                                    value={note}
+                                                    onChange={(e) => setNote(e.target.value)}
                                                 />
-                                                <button 
+                                                <button
                                                     className="btn btn-sm btn-primary"
                                                     onClick={async () => {
                                                         if (!note) return toast.warning("Enter a message");
@@ -242,7 +267,7 @@ const ManageComplaints = () => {
                                                 </button>
                                             </div>
                                             <div className="d-flex gap-2">
-                                                <button 
+                                                <button
                                                     className="btn btn-sm btn-outline-warning small py-1"
                                                     style={{ fontSize: '0.7rem' }}
                                                     onClick={() => setNote("This area is already being cleaned. Any other complaint you can send me.")}
@@ -311,6 +336,30 @@ const ManageComplaints = () => {
                                                         <img src={`http://localhost:4000${selectedComplaint.proofImage}`} alt="Proof" className="rounded" style={{ width: '100px', height: '100px', objectFit: 'cover' }} />
                                                     </div>
                                                 )}
+                                            </div>
+                                        )}
+
+                                        {selectedComplaint.status === "Resolved" && selectedComplaint.feedbackRating > 0 && (
+                                            <div className="p-3 rounded mb-3 border" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
+                                                <h6 className="fw-bold mb-2" style={{ color: '#92400e' }}>
+                                                    <i className="fas fa-star me-2 text-warning"></i>Citizen Feedback
+                                                </h6>
+                                                <div className="text-warning mb-1">
+                                                    {[...Array(5)].map((_, i) => (
+                                                        <i key={i} className={`${i < selectedComplaint.feedbackRating ? 'fas' : 'far'} fa-star me-1`}></i>
+                                                    ))}
+                                                    <span className="ms-2 small fw-bold text-dark">{selectedComplaint.feedbackRating}/5</span>
+                                                </div>
+                                                <p className="small text-muted mb-0 fst-italic">"{selectedComplaint.feedbackComment}"</p>
+                                                <small className="text-muted d-block mt-1">
+                                                    — {selectedComplaint.citizenName || 'Citizen'} &nbsp;·&nbsp; {new Date(selectedComplaint.updatedAt).toLocaleDateString()}
+                                                </small>
+                                            </div>
+                                        )}
+
+                                        {selectedComplaint.status === "Resolved" && !selectedComplaint.feedbackRating && (
+                                            <div className="p-3 rounded mb-3 border text-muted small" style={{ background: '#f8fafc' }}>
+                                                <i className="fas fa-clock me-2 opacity-50"></i>Awaiting citizen feedback...
                                             </div>
                                         )}
 

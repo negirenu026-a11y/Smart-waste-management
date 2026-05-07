@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
+import { useSearch } from "../../../context/SearchContext";
 
 const Managemc = () => {
+    const { searchTerm } = useSearch();
     const [mcUsers, setMcUsers] = useState([]);
     const [districts, setDistricts] = useState([]);
     const [cities, setCities] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [form, setForm] = useState({ 
-        fullName: "", 
-        email: "", 
-        password: "", 
+    const [form, setForm] = useState({
+        fullName: "",
+        email: "",
+        password: "",
         district: "",
-        city: "", 
-        zone: "", 
-        ward: "" 
+        city: "",
+        zone: "",
+        ward: ""
     });
     const [editingMc, setEditingMc] = useState(null);
 
@@ -124,6 +126,12 @@ const Managemc = () => {
         }
     };
 
+    const filteredMCs = (mcUsers || []).filter(mc => 
+        Object.values(mc).some(val => 
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
+
     return (
         <div className="dashboard-section-wrap p-4">
             <header className="mb-4">
@@ -150,7 +158,7 @@ const Managemc = () => {
                             <input className="form-control" name="password" type="password" placeholder="••••••••"
                                 value={form.password} onChange={handleChange} required={!editingMc} />
                         </div>
-                        
+
                         <div className="col-md-3">
                             <label className="form-label small fw-bold">District</label>
                             <select className="form-select" name="district" value={form.district} onChange={handleChange} required>
@@ -173,6 +181,7 @@ const Managemc = () => {
                                 <option value="South">South</option>
                                 <option value="East">East</option>
                                 <option value="West">West</option>
+                                <option value="Center">Center</option>
                             </select>
                         </div>
                         <div className="col-md-3">
@@ -207,25 +216,28 @@ const Managemc = () => {
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={5} className="text-center py-5">Loading Municipal Corporations...</td></tr>
-                            ) : mcUsers.length === 0 ? (
-                                <tr><td colSpan={5} className="text-center text-muted py-5">No Municipal Corporations found.</td></tr>
+                            ) : filteredMCs.length === 0 ? (
+                                <tr><td colSpan={5} className="text-center text-muted py-5">
+                                    <i className="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
+                                    No matching results found.
+                                </td></tr>
                             ) : (
-                                mcUsers.map((mc) => (
+                                filteredMCs.map((mc) => (
                                     <tr key={mc._id}>
-                                         <td className="ps-4">
-                                             <div className="fw-bold text-primary">{mc.name}</div>
-                                             <small className="text-muted">{mc.email}</small>
-                                         </td>
-                                         <td>
-                                             <div className="d-flex flex-column">
-                                                 <span className="fw-bold">{mc.district}</span>
-                                                 <span className="small text-muted">{mc.city} | {mc.zone || "Auto"}</span>
-                                             </div>
-                                         </td>
-                                         <td>
-                                             <p className="mb-0"><strong>Ward:</strong> {mc.ward || "N/A"}</p>
-                                         </td>
-                                         <td><span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Active</span></td>
+                                        <td className="ps-4">
+                                            <div className="fw-bold text-primary">{mc.name}</div>
+                                            <small className="text-muted">{mc.email}</small>
+                                        </td>
+                                        <td>
+                                            <div className="d-flex flex-column">
+                                                <span className="fw-bold">{mc.district}</span>
+                                                <span className="small text-muted">{mc.city} | {mc.zone || "Auto"}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <p className="mb-0"><strong>Ward:</strong> {mc.ward || "N/A"}</p>
+                                        </td>
+                                        <td><span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Active</span></td>
                                         <td className="pe-4 text-end">
                                             <div className="d-flex gap-2 justify-content-end">
                                                 <button className="btn btn-sm btn-outline-primary" onClick={() => startEdit(mc)}>

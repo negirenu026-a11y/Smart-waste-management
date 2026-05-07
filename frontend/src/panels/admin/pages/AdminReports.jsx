@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
 import { jsPDF } from "jspdf";
+import { useSearch } from "../../../context/SearchContext";
 
 const AdminReports = () => {
+    const { searchTerm } = useSearch();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [responseForm, setResponseForm] = useState({ id: null, status: "", response: "" });
@@ -86,6 +88,25 @@ const AdminReports = () => {
         }
     };
 
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this report? This action cannot be undone.")) return;
+        try {
+            const res = await api.delete(`/reports/${id}`);
+            if (res.data.success) {
+                toast.success("Report deleted successfully.");
+                fetchReports();
+            }
+        } catch (err) {
+            toast.error("Failed to delete report.");
+        }
+    };
+
+    const filteredReports = (reports || []).filter(report => 
+        Object.values(report).some(val => 
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
+
     return (
         <div className="dashboard-section-wrap p-4">
             <header className="mb-4">
@@ -108,10 +129,10 @@ const AdminReports = () => {
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={5} className="text-center py-5">Loading reports...</td></tr>
-                            ) : reports.length === 0 ? (
-                                <tr><td colSpan={5} className="text-center text-muted py-5">No reports submitted yet.</td></tr>
+                            ) : filteredReports.length === 0 ? (
+                                <tr><td colSpan={5} className="text-center text-muted py-5">No matching results found.</td></tr>
                             ) : (
-                                reports.map((report) => (
+                                filteredReports.map((report) => (
                                     <tr key={report._id}>
                                         <td className="ps-4">
                                             <div className="fw-bold text-primary">{report.title || report.mcName}</div>
@@ -147,13 +168,20 @@ const AdminReports = () => {
                                                     onClick={() => downloadPDF(report)}
                                                     title="Download as PDF"
                                                 >
-                                                    <i className="fas fa-file-pdf me-1" /> PDF
+                                                    <i className="fas fa-file-pdf" />
                                                 </button>
                                                 <button 
-                                                    className="btn btn-sm btn-primary" 
+                                                    className="btn btn-sm btn-primary px-3" 
                                                     onClick={() => setResponseForm({ id: report._id, status: report.status, response: report.adminResponse || "" })}
                                                 >
                                                     Respond
+                                                </button>
+                                                <button 
+                                                    className="btn btn-sm btn-outline-secondary" 
+                                                    onClick={() => handleDelete(report._id)}
+                                                    title="Delete Report"
+                                                >
+                                                    <i className="fas fa-trash-alt" />
                                                 </button>
                                             </div>
                                         </td>

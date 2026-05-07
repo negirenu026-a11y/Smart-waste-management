@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
+import { useSearch } from "../../../context/SearchContext";
 
 const Managecitizens = () => {
+    const { searchTerm, setSearchTerm } = useSearch();
     const [citizens, setCitizens] = useState([]);
-    const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
     const [editingCitizen, setEditingCitizen] = useState(null);
     const [form, setForm] = useState({
@@ -72,8 +73,9 @@ const Managecitizens = () => {
     };
 
     const filteredCitizens = citizens.filter(c => 
-        (c.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (c.email || "").toLowerCase().includes(searchQuery.toLowerCase())
+        Object.values(c).some(val => 
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
     );
 
     return (
@@ -85,12 +87,12 @@ const Managecitizens = () => {
                 </div>
                 {!editingCitizen && (
                     <div className="search-bar" style={{ width: '300px' }}>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             className="form-control shadow-sm border-0"
-                            placeholder="Search by name or email..." 
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search by name or email..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                 )}
@@ -103,27 +105,27 @@ const Managecitizens = () => {
                         <div className="row g-3">
                             <div className="col-md-4">
                                 <label className="form-label small fw-bold">Full Name</label>
-                                <input className="form-control" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} required />
+                                <input className="form-control" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
                             </div>
                             <div className="col-md-4">
                                 <label className="form-label small fw-bold">Email Address</label>
-                                <input className="form-control" type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} required />
+                                <input className="form-control" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
                             </div>
                             <div className="col-md-4">
                                 <label className="form-label small fw-bold">Phone</label>
-                                <input className="form-control" value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} />
+                                <input className="form-control" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                             </div>
                             <div className="col-md-4">
                                 <label className="form-label small fw-bold">City</label>
-                                <input className="form-control" value={form.city} onChange={(e) => setForm({...form, city: e.target.value})} />
+                                <input className="form-control" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
                             </div>
                             <div className="col-md-4">
                                 <label className="form-label small fw-bold">State</label>
-                                <input className="form-control" value={form.state} onChange={(e) => setForm({...form, state: e.target.value})} />
+                                <input className="form-control" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
                             </div>
                             <div className="col-md-4">
                                 <label className="form-label small fw-bold">New Password (Optional)</label>
-                                <input className="form-control" type="password" placeholder="Leave blank to keep same" value={form.password} onChange={(e) => setForm({...form, password: e.target.value})} />
+                                <input className="form-control" type="password" placeholder="Leave blank to keep same" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
                             </div>
                             <div className="col-12 text-end d-flex gap-2 justify-content-end">
                                 <button className="btn btn-light px-4" type="button" onClick={() => setEditingCitizen(null)}>Cancel</button>
@@ -150,7 +152,10 @@ const Managecitizens = () => {
                             {loading ? (
                                 <tr><td colSpan={5} className="text-center py-5">Loading citizens...</td></tr>
                             ) : filteredCitizens.length === 0 ? (
-                                <tr><td colSpan={5} className="text-center text-muted py-5">No citizens matching your search.</td></tr>
+                                <tr><td colSpan={5} className="text-center text-muted py-5">
+                                    <i className="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
+                                    No matching results found.
+                                </td></tr>
                             ) : (
                                 filteredCitizens.map((c) => (
                                     <tr key={c._id}>

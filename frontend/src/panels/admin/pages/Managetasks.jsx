@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../utils/api";
+import { useSearch } from "../../../context/SearchContext";
 
 const ManageTasks = () => {
+    const { searchTerm } = useSearch();
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -21,6 +23,26 @@ const ManageTasks = () => {
         }
     };
 
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this task?")) return;
+        try {
+            const res = await api.delete(`/tasks/${id}`);
+            if (res.data.success) {
+                const { toast } = await import('react-toastify');
+                toast.success("Task deleted successfully.");
+                fetchTasks();
+            }
+        } catch (err) {
+            console.error("Delete task error:", err);
+        }
+    };
+
+    const filteredTasks = (tasks || []).filter(task => 
+        Object.values(task).some(val => 
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
+
     return (
         <div className="dashboard-section-wrap p-4">
             <header className="mb-4">
@@ -37,16 +59,17 @@ const ManageTasks = () => {
                                 <th>Assigned Worker</th>
                                 <th>Deadline</th>
                                 <th>Status</th>
-                                <th className="text-end pe-4">Evidence / Proof</th>
+                                <th>Evidence / Proof</th>
+                                <th className="text-end pe-4">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={5} className="text-center py-5">Loading tasks Oversight...</td></tr>
-                            ) : tasks.length === 0 ? (
-                                <tr><td colSpan={5} className="text-center py-5 text-muted">No tasks records found.</td></tr>
+                            ) : filteredTasks.length === 0 ? (
+                                <tr><td colSpan={6} className="text-center py-5 text-muted">No matching results found.</td></tr>
                             ) : (
-                                tasks.map((task) => (
+                                filteredTasks.map((task) => (
                                     <tr key={task._id}>
                                         <td className="ps-4">
                                             <p className="fw-bold mb-0">{task.title}</p>
@@ -64,7 +87,7 @@ const ManageTasks = () => {
                                                 {task.status}
                                             </span>
                                         </td>
-                                        <td className="text-end pe-4">
+                                        <td>
                                             {task.proofImage ? (
                                                 <div className="d-inline-block position-relative group" style={{ cursor: 'pointer' }} onClick={() => window.open(`http://localhost:4000${task.proofImage}`)}>
                                                     <img src={`http://localhost:4000${task.proofImage}`} alt="Proof" className="rounded shadow-sm border" style={{ width: '60px', height: '40px', objectFit: 'cover' }} />
@@ -75,6 +98,11 @@ const ManageTasks = () => {
                                             ) : (
                                                 <span className="text-muted italic small">No proof yet</span>
                                             )}
+                                        </td>
+                                        <td className="text-end pe-4">
+                                            <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(task._id)} title="Delete Task">
+                                                <i className="fas fa-trash-alt"></i>
+                                            </button>
                                         </td>
                                     </tr>
                                 ))

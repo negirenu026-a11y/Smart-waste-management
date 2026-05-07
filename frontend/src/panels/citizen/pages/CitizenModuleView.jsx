@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../utils/api';
 import { toast } from 'react-toastify';
+import { useSearch } from '../../../context/SearchContext';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -23,7 +24,8 @@ const MapController = ({ center }) => {
 };
 
 const CitizenModuleView = () => {
-    const [locationMode, setLocationMode] = useState(''); 
+    const { searchTerm } = useSearch();
+    const [locationMode, setLocationMode] = useState('');
     const [areas, setAreas] = useState([]);
     const [districts, setDistricts] = useState([]);
     const [cities, setCities] = useState([]);
@@ -267,11 +269,19 @@ const CitizenModuleView = () => {
         }
     };
 
-    const handleFeedback = (id, rating, comment) => {
-        const newFeedback = { ...feedback, [id]: { rating, comment } };
-        setFeedback(newFeedback);
-        localStorage.setItem('citizen_feedback', JSON.stringify(newFeedback));
-        toast.success("Feedback submitted!");
+    const handleFeedback = async (id, rating, comment) => {
+        try {
+            const res = await api.patch(`/complaints/${id}/feedback`, { rating, comment });
+            if (res.data.success) {
+                const newFeedback = { ...feedback, [id]: { rating, comment } };
+                setFeedback(newFeedback);
+                localStorage.setItem('citizen_feedback', JSON.stringify(newFeedback));
+                toast.success("Feedback submitted!");
+                loadHistory(); // Refresh to show stars etc
+            }
+        } catch (err) {
+            toast.error("Failed to submit feedback.");
+        }
     };
 
     const getTimeAgo = (date) => {
@@ -289,7 +299,13 @@ const CitizenModuleView = () => {
         return Math.floor(seconds) + " seconds ago";
     };
 
-    const filteredHistory = historyFilter === 'All' ? history : history.filter(c => c.status === historyFilter);
+    const filteredByStatus = historyFilter === 'All' ? history : history.filter(c => c.status === historyFilter);
+
+    const filteredHistory = filteredByStatus.filter(c => 
+        Object.values(c).some(val => 
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -315,9 +331,9 @@ const CitizenModuleView = () => {
 
                     <div className="col-md-12">
                         <label className="form-label fw-bold small text-uppercase">Location Method</label>
-                        <select 
-                            className="form-select" 
-                            value={locationMode} 
+                        <select
+                            className="form-select"
+                            value={locationMode}
                             onChange={(e) => {
                                 const val = e.target.value;
                                 if (val === 'auto') handleUseLocation();
@@ -451,7 +467,7 @@ const CitizenModuleView = () => {
                                         <small className="text-muted">{getTimeAgo(c.createdAt)}</small>
                                     </div>
                                     <p className="small text-muted mb-3"><i className="fas fa-map-marker-alt me-2 text-danger"></i>{c.location || c.area}</p>
-                                    
+
                                     <div className="timeline-wrap mb-4">
                                         <label className="small fw-bold text-uppercase text-muted d-block mb-2" style={{ fontSize: '0.65rem' }}>Status Timeline</label>
                                         <div className="d-flex align-items-center gap-2">
@@ -476,7 +492,7 @@ const CitizenModuleView = () => {
                                         <div className="resolved-details mt-3 p-3 bg-light rounded border-start border-success border-4">
                                             <h6 className="fw-bold text-success mb-2 small"><i className="fas fa-check-circle me-1"></i> Issue Resolved</h6>
                                             <p className="small mb-2 italic">"{c.completionNote || 'Work completed successfully.'}"</p>
-                                            
+
                                             {c.proofImage && (
                                                 <div className="before-after-wrap d-flex gap-2 mb-3">
                                                     <div className="flex-1 text-center">
@@ -512,8 +528,8 @@ const CitizenModuleView = () => {
                     ))}
                     {filteredHistory.length === 0 && (
                         <div className="col-12 text-center py-5 text-muted">
-                            <i className="fas fa-history fa-3x mb-3 opacity-25"></i>
-                            <p>No complaints found in this category.</p>
+                            <i className="fas fa-search fa-3x mb-3 opacity-25"></i>
+                            <p>No matching results found.</p>
                         </div>
                     )}
                 </div>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { toast } from 'react-toastify';
+import { useSearch } from "../../../context/SearchContext";
 
 const WeeklyReport = () => {
+    const { searchTerm } = useSearch();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
@@ -133,6 +135,12 @@ const WeeklyReport = () => {
             toast.error("Failed to delete report.");
         }
     };
+
+    const filteredReports = (reports || []).filter(report => 
+        Object.values(report).some(val => 
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -265,10 +273,10 @@ const WeeklyReport = () => {
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={6} className="text-center py-5"><span className="spinner-border spinner-border-sm me-2"/>Loading operational logs...</td></tr>
-                            ) : reports.length === 0 ? (
-                                <tr><td colSpan={6} className="text-center py-5 text-muted">No historical reports found. Submit your weekly summary above.</td></tr>
+                            ) : filteredReports.length === 0 ? (
+                                <tr><td colSpan={6} className="text-center py-5 text-muted">No matching results found.</td></tr>
                             ) : (
-                                reports.map((r) => (
+                                filteredReports.map((r) => (
                                     <tr key={r._id}>
                                         <td className="ps-4">
                                             <div className="fw-bold text-primary">{r.title}</div>

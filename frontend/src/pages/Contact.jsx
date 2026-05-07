@@ -57,7 +57,7 @@ const Contact = () => {
                             </div>
                             <div>
                                 <h5 className="fw-bold mb-1">Call Us</h5>
-                                <p className="mb-0 text-secondary">+91 (555) 123-4567</p>
+                                <p className="mb-0 text-secondary">+91 86289-71014</p>
                             </div>
                         </div>
                         <div className="rounded overflow-hidden" style={{ height: '300px' }}>

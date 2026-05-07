@@ -31,7 +31,7 @@ function Footer() {
           </div>
           <div className="col-md-4">
             <h6 className="mb-3">Contact</h6>
-            <p className="mb-1">123 Green Lane, Nature City</p>
+            <p className="mb-1">Sector 74 ,Phase 8b mohali(Punjab)</p>
             <p className="mb-1">negirenu026@gmail.com</p>
             <p>+91 86289-71014</p>
           </div>

@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
+import { useSearch } from "../../../context/SearchContext";
 
 /* ─── Badge helpers ──────────────────────────────────────────────── */
 const priorityStyle = {
-    High:   { bg: "#fef2f2", color: "#991b1b", border: "#fecaca", icon: "fa-fire",         dot: "#ef4444" },
+    High: { bg: "#fef2f2", color: "#991b1b", border: "#fecaca", icon: "fa-fire", dot: "#ef4444" },
     Medium: { bg: "#fffbeb", color: "#92400e", border: "#fde68a", icon: "fa-circle-half-stroke", dot: "#f59e0b" },
-    Low:    { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0", icon: "fa-leaf",          dot: "#22c55e" },
+    Low: { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0", icon: "fa-leaf", dot: "#22c55e" },
 };
 
 const statusStyle = {
-    Pending:     { bg: "#f8fafc", color: "#475569", border: "#cbd5e1", icon: "fa-clock" },
-    "In Progress":{ bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe", icon: "fa-spinner" },
-    Completed:   { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0", icon: "fa-circle-check" },
-    Resolved:    { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0", icon: "fa-check-double" },
+    Pending: { bg: "#f8fafc", color: "#475569", border: "#cbd5e1", icon: "fa-clock" },
+    "In Progress": { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe", icon: "fa-spinner" },
+    Completed: { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0", icon: "fa-circle-check" },
+    Resolved: { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0", icon: "fa-check-double" },
 };
 
 const PriorityBadge = ({ priority }) => {
@@ -46,9 +47,9 @@ const DeadlineBadge = ({ deadline, status }) => {
     const dl = new Date(deadline);
     const diffDays = Math.ceil((dl - now) / 86400000);
     let style = { bg: "#f0fdf4", color: "#166534", border: "#bbf7d0", label: "On Time", icon: "fa-calendar-check" };
-    if (diffDays < 0)    style = { bg: "#fef2f2", color: "#991b1b", border: "#fecaca", label: `${Math.abs(diffDays)}d overdue`, icon: "fa-triangle-exclamation" };
+    if (diffDays < 0) style = { bg: "#fef2f2", color: "#991b1b", border: "#fecaca", label: `${Math.abs(diffDays)}d overdue`, icon: "fa-triangle-exclamation" };
     else if (diffDays <= 2) style = { bg: "#fffbeb", color: "#92400e", border: "#fde68a", label: `${diffDays}d left`, icon: "fa-hourglass-half" };
-    else                    style = { ...style, label: `${diffDays}d left` };
+    else style = { ...style, label: `${diffDays}d left` };
     return (
         <div className="d-flex flex-column gap-1">
             <span className="small text-muted">{dl.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
@@ -63,6 +64,7 @@ const DeadlineBadge = ({ deadline, status }) => {
 /* ─────────────────────────────────────────────────────────────────── */
 
 const ManageTasks = () => {
+    const { searchTerm } = useSearch();
     const [tasks, setTasks] = useState([]);
     const [workers, setWorkers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -150,7 +152,13 @@ const ManageTasks = () => {
         }
     };
 
-    const displayTasks = filterStatus === "All" ? tasks : tasks.filter(t => t.status === filterStatus);
+    const filteredByStatus = filterStatus === "All" ? tasks : tasks.filter(t => t.status === filterStatus);
+
+    const displayTasks = filteredByStatus.filter(t => 
+        Object.values(t).some(val => 
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
 
     const counts = {
         Pending: tasks.filter(t => t.status === "Pending").length,
@@ -176,9 +184,9 @@ const ManageTasks = () => {
             {/* Summary pills */}
             <div className="d-flex gap-3 mb-4 flex-wrap">
                 {[
-                    { label: "Pending",     count: counts.Pending,       bg: "#f8fafc", color: "#475569", border: "#cbd5e1", icon: "fa-clock" },
+                    { label: "Pending", count: counts.Pending, bg: "#f8fafc", color: "#475569", border: "#cbd5e1", icon: "fa-clock" },
                     { label: "In Progress", count: counts["In Progress"], bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe", icon: "fa-spinner" },
-                    { label: "Completed",   count: counts.Completed,     bg: "#f0fdf4", color: "#166534", border: "#bbf7d0", icon: "fa-circle-check" },
+                    { label: "Completed", count: counts.Completed, bg: "#f0fdf4", color: "#166534", border: "#bbf7d0", icon: "fa-circle-check" },
                 ].map(({ label, count, bg, color, border, icon }) => (
                     <button key={label}
                         onClick={() => setFilterStatus(filterStatus === label ? "All" : label)}
@@ -257,8 +265,8 @@ const ManageTasks = () => {
                                 </td></tr>
                             ) : displayTasks.length === 0 ? (
                                 <tr><td colSpan={6} className="text-center py-5 text-muted">
-                                    <i className="fas fa-clipboard-list fa-2x mb-2 d-block opacity-25"></i>
-                                    No tasks found.
+                                    <i className="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
+                                    No matching results found.
                                 </td></tr>
                             ) : (
                                 displayTasks.map((task) => {

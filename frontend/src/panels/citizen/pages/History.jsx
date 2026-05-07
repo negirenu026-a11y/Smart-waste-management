@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../utils/api';
 import { toast } from 'react-toastify';
+import { useSearch } from '../../../context/SearchContext';
 
 const History = () => {
+    const { searchTerm } = useSearch();
     const [complaints, setComplaints] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedComplaint, setSelectedComplaint] = useState(null);
@@ -31,6 +33,11 @@ const History = () => {
             default: return 'bg-danger';
         }
     };
+    const filteredComplaints = (complaints || []).filter(c => 
+        Object.values(c).some(val => 
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
 
     return (
         <div className="dashboard-section-wrap p-4">
@@ -54,17 +61,17 @@ const History = () => {
                         <tbody>
                             {loading ? (
                                 <tr><td colSpan={5} className="text-center py-5">Loading history...</td></tr>
-                            ) : complaints.length === 0 ? (
+                            ) : filteredComplaints.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="text-center py-5">
                                         <div className="text-muted mb-3">
-                                            <i className="fas fa-history fa-3x opacity-25 mb-2"></i>
-                                            <p>No complaints found in your history.</p>
+                                            <i className="fas fa-search fa-3x opacity-25 mb-2"></i>
+                                            <p>No matching results found.</p>
                                         </div>
                                     </td>
                                 </tr>
                             ) : (
-                                complaints.map((c) => (
+                                filteredComplaints.map((c) => (
                                     <tr key={c._id}>
                                         <td className="ps-4">
                                             <div className="d-flex align-items-center gap-3">

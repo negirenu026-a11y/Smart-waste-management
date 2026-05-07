@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
+import { useSearch } from "../../../context/SearchContext";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -22,16 +23,17 @@ const MapController = ({ center }) => {
 };
 
 const Manageareas = () => {
+    const { searchTerm } = useSearch();
     const [areas, setAreas] = useState([]);
     const [districts, setDistricts] = useState([]);
     const [cities, setCities] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [form, setForm] = useState({ 
-        name: "", 
-        district: "", 
-        city: "", 
-        zone: "", 
-        ward: "", 
+    const [form, setForm] = useState({
+        name: "",
+        district: "",
+        city: "",
+        zone: "",
+        ward: "",
         pincode: "",
         lat: 31.1048,
         lng: 77.1734
@@ -173,6 +175,12 @@ const Manageareas = () => {
         }
     };
 
+    const filteredAreas = (areas || []).filter(area => 
+        Object.values(area).some(val => 
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
+
     return (
         <div className="dashboard-section-wrap p-4">
             <header className="mb-4 d-flex justify-content-between align-items-center">
@@ -213,6 +221,7 @@ const Manageareas = () => {
                                 <option value="South">South</option>
                                 <option value="East">East</option>
                                 <option value="West">West</option>
+                                <option value="Center">Center</option>
                             </select>
                         </div>
                         <div className="col-md-4">
@@ -254,24 +263,27 @@ const Manageareas = () => {
                                 <tbody>
                                     {loading ? (
                                         <tr><td colSpan={4} className="text-center py-5">Loading operational areas...</td></tr>
-                                    ) : areas.length === 0 ? (
-                                        <tr><td colSpan={4} className="text-center text-muted py-5">No areas found.</td></tr>
+                                    ) : filteredAreas.length === 0 ? (
+                                        <tr><td colSpan={4} className="text-center text-muted py-5">
+                                            <i className="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
+                                            No matching results found.
+                                        </td></tr>
                                     ) : (
-                                        areas.map((a) => (
+                                        filteredAreas.map((a) => (
                                             <tr key={a._id}>
-                                                 <td className="ps-4">
-                                                     <div className="fw-bold text-primary">{a.name}</div>
-                                                 </td>
-                                                 <td>
-                                                     <span className="fw-bold">{a.district}</span>
-                                                     <span className="text-muted small ms-2">({a.city})</span>
-                                                 </td>
-                                                 <td>
-                                                     <div className="d-flex flex-column">
-                                                         <span className="badge bg-info bg-opacity-10 text-info mb-1" style={{width: 'fit-content'}}>{a.zone}</span>
-                                                         <span className="small text-muted">{a.ward}</span>
-                                                     </div>
-                                                 </td>
+                                                <td className="ps-4">
+                                                    <div className="fw-bold text-primary">{a.name}</div>
+                                                </td>
+                                                <td>
+                                                    <span className="fw-bold">{a.district}</span>
+                                                    <span className="text-muted small ms-2">({a.city})</span>
+                                                </td>
+                                                <td>
+                                                    <div className="d-flex flex-column">
+                                                        <span className="badge bg-info bg-opacity-10 text-info mb-1" style={{ width: 'fit-content' }}>{a.zone}</span>
+                                                        <span className="small text-muted">{a.ward}</span>
+                                                    </div>
+                                                </td>
                                                 <td className="pe-4 text-end">
                                                     <div className="d-flex gap-2 justify-content-end">
                                                         <button className="btn btn-sm btn-outline-primary" onClick={() => startEdit(a)}>

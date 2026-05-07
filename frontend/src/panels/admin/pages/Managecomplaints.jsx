@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { toast } from "react-toastify";
+import { useSearch } from "../../../context/SearchContext";
 
 const STATUS_COLORS = {
     Pending: "#ef4444",
@@ -9,6 +10,7 @@ const STATUS_COLORS = {
 };
 
 const Managecomplaints = () => {
+    const { searchTerm } = useSearch();
     const [complaints, setComplaints] = useState([]);
     const [filter, setFilter] = useState("All");
     const [loading, setLoading] = useState(true);
@@ -55,7 +57,13 @@ const Managecomplaints = () => {
         }
     };
 
-    const filtered = filter === "All" ? complaints : complaints.filter((c) => c.status === filter);
+    const filteredByStatus = filter === "All" ? complaints : complaints.filter((c) => c.status === filter);
+
+    const filtered = filteredByStatus.filter(c => 
+        Object.values(c).some(val => 
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
 
     const statusCounts = complaints.reduce((acc, c) => {
         const s = c.status || "Pending";
@@ -75,7 +83,7 @@ const Managecomplaints = () => {
             <div className="row g-4 mb-4">
                 {['All', 'Pending', 'In Process', 'Resolved'].map((s) => (
                     <div key={s} className="col-md-3">
-                        <div 
+                        <div
                             className={`dashboard-card p-3 shadow-sm border-0 bg-white text-center hover-lift ${filter === s ? 'border-bottom border-primary border-4' : ''}`}
                             onClick={() => setFilter(s)}
                             style={{ cursor: 'pointer' }}>
@@ -102,7 +110,10 @@ const Managecomplaints = () => {
                             {loading ? (
                                 <tr><td colSpan={5} className="text-center py-5">Loading complaints...</td></tr>
                             ) : filtered.length === 0 ? (
-                                <tr><td colSpan={5} className="text-center text-muted py-5">No records found for the selected category.</td></tr>
+                                <tr><td colSpan={5} className="text-center text-muted py-5">
+                                    <i className="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
+                                    No matching results found.
+                                </td></tr>
                             ) : (
                                 filtered.map((c) => (
                                     <tr key={c._id}>
@@ -135,7 +146,7 @@ const Managecomplaints = () => {
                                                 <button className="btn btn-sm btn-outline-info" onClick={() => setSelectedComplaint(c)} title="View Details">
                                                     <i className="fas fa-eye"></i>
                                                 </button>
-                                                <select 
+                                                <select
                                                     className="form-select form-select-sm w-auto"
                                                     value={c.status || "Pending"}
                                                     onChange={(e) => handleStatusChange(c._id, e.target.value)}
@@ -182,7 +193,7 @@ const Managecomplaints = () => {
                                                 {selectedComplaint.status || "Pending"}
                                             </span>
                                         </div>
-                                        
+
                                         <div className="mb-3">
                                             <label className="text-muted small fw-bold d-block">Description</label>
                                             <p className="mb-0">{selectedComplaint.description || "No description provided."}</p>
@@ -223,7 +234,7 @@ const Managecomplaints = () => {
                                 <div className="d-flex w-100 justify-content-between align-items-center">
                                     <div className="d-flex gap-2 align-items-center">
                                         <label className="small fw-bold">Update Status:</label>
-                                        <select 
+                                        <select
                                             className="form-select form-select-sm w-auto"
                                             value={selectedComplaint.status || "Pending"}
                                             onChange={(e) => handleStatusChange(selectedComplaint._id, e.target.value)}

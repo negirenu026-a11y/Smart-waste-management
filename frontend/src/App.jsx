@@ -44,12 +44,14 @@ import SettingsModule from './components/dashboard/SettingsModule'
 
 
 import AdminReports from './panels/admin/pages/AdminReports'
+import { SearchProvider } from './context/SearchContext'
 
 const App = () => {
   return (
     <BrowserRouter>
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover theme="colored" />
-      <Routes>
+      <SearchProvider>
+        <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover theme="colored" />
+        <Routes>
         {/* Public Routes */}
         <Route path='/auth' element={<Auth />} />
         <Route path='/' element={<MainLayout />}>
@@ -100,6 +102,7 @@ const App = () => {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </SearchProvider>
     </BrowserRouter>
   )
 }

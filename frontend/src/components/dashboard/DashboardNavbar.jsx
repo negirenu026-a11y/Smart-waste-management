@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
+import { useSearch } from '../../context/SearchContext';
 
 const DashboardNavbar = ({ user }) => {
     const [showNotif, setShowNotif] = useState(false);
@@ -9,6 +10,7 @@ const DashboardNavbar = ({ user }) => {
     const navigate = useNavigate();
     const accentColor = "#10b981";
     const userMenuRef = useRef(null);
+    const { searchTerm, setSearchTerm } = useSearch();
 
     // Fetch real notifications
     const fetchNotifications = async () => {
@@ -16,14 +18,14 @@ const DashboardNavbar = ({ user }) => {
             const res = await api.get("/notifications");
             if (res.data.success) {
                 const newNotifs = res.data.notifications || [];
-                
+
                 // Show toast if a NEW notification arrived (count increased)
                 if (newNotifs.length > notifications.length && notifications.length > 0) {
                     const latest = newNotifs[0];
                     const { toast } = await import('react-toastify');
                     toast.info(`🔔 ${latest.title}: ${latest.message.substring(0, 40)}...`);
                 }
-                
+
                 setNotifications(newNotifs);
             }
         } catch (err) {
@@ -84,7 +86,12 @@ const DashboardNavbar = ({ user }) => {
             <div className="dashboard-topbar__left">
                 <div className="search-bar">
                     <i className="fas fa-search" />
-                    <input type="text" placeholder="Search areas, complaints, workers..." />
+                    <input 
+                        type="text" 
+                        placeholder="Search areas, complaints, workers..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
             </div>
             <div className="dashboard-topbar__right">
@@ -119,7 +126,7 @@ const DashboardNavbar = ({ user }) => {
                                                 <div className="d-flex gap-2 pe-4">
                                                     <i className={`fas ${n.type === 'Complaint' ? 'fa-exclamation-circle text-danger' : 'fa-info-circle text-primary'} mt-1`} />
                                                     <div onClick={async () => {
-                                                        if(!n.isRead) {
+                                                        if (!n.isRead) {
                                                             await api.patch(`/notifications/${n._id}/read`);
                                                             fetchNotifications();
                                                         }
@@ -131,7 +138,7 @@ const DashboardNavbar = ({ user }) => {
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <button 
+                                                <button
                                                     className="btn btn-sm position-absolute top-50 end-0 translate-middle-y me-2 text-muted border-0 bg-transparent"
                                                     onClick={(e) => {
                                                         e.stopPropagation();

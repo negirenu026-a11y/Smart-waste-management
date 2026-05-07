@@ -18,7 +18,7 @@ const CitizenDashboard = () => {
                 setLoading(true);
                 const res = await api.get("/complaints");
                 const userComplaints = res.data.complaints || [];
-                
+
                 setStats({
                     total: userComplaints.length,
                     pending: userComplaints.filter(c => c.status === 'Pending').length,
@@ -115,7 +115,7 @@ const CitizenDashboard = () => {
                     </div>
                 </div>
             </div>
-            
+
             <div className="mt-4">
                 <h5 className="fw-bold mb-3">System Information</h5>
                 <div className="alert alert-info border-0 shadow-sm">
